@@ -25,12 +25,12 @@ export class AuthService {
 
   async userSignIn(signInDto: SignInDto) {
     const user = await this.userService.findUserByEmail(signInDto.email);
+
     const checkPassword = await bcrypt.compare(signInDto.password, user.password);
 
     if (!checkPassword) {
       throw new UnauthorizedException()
     }
-
 
     return {
       access_token: await this.jwtService.signAsync(generatePayload(user))

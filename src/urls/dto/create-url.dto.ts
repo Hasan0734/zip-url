@@ -6,7 +6,7 @@ export class CreateUrlDto {
     original_url: string;
 
     @IsOptional()
-    @MinLength(8, { message: "Alias is too short!" })
+    @MinLength(6, { message: "Alias is too short!" })
     @MaxLength(20, { message: "Alias is too big!" })
     @Matches(/^\S*$/, {
         message: "Alias should not contain spaces!"

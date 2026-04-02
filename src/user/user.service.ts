@@ -1,6 +1,6 @@
 import { User, UserSchema } from './schemas/user.schema';
 
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { UpdateUserDto } from 'src/auth/dto/update-user.dto';
@@ -24,25 +24,36 @@ export class UserService {
   }
   async findUserByEmail(email: string) {
     try {
-      const res = await this.userModel.findOne({ email });
-      return res;
+      const user = await this.userModel.findOne({ email });
+      if (!user) {
+        throw new NotFoundException()
+      }
+      return user;
     } catch (error) {
       throw error
     }
   }
   async findUserById(_id: string) {
     try {
-      const res = await this.userModel.findOne({ _id }).select("-password");
-      return res;
+      const user = await this.userModel.findOne({ _id }).select("-password");
+
+      if (!user) {
+        throw new NotFoundException()
+      }
+      return user;
     } catch (error) {
       throw error
     }
   }
   async findUserAndUpdate(_id: string, userUpdateDto: UpdateUserDto) {
     try {
-      const user = await this.userModel.findOneAndUpdate({_id}, userUpdateDto, {
+      const user = await this.userModel.findOneAndUpdate({ _id }, userUpdateDto, {
         returnDocument: 'after'
       }).select("-password")
+
+      if (!user) {
+        throw new NotFoundException()
+      }
 
       return user;
     } catch (error) {

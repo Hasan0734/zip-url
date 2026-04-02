@@ -1,13 +1,11 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateUrlDto } from './create-url.dto';
-import { IsDate, IsOptional, IsString, IsUrl, Length, Matches, MaxLength, MinLength } from "class-validator";
+import { IsBoolean, IsDate, IsOptional, IsString, IsUrl, Length, Matches, MaxLength, MinLength } from "class-validator";
 import { Type } from 'class-transformer';
 
 
-export class UpdateUrlDto extends PartialType(CreateUrlDto) {
-    
-    @IsUrl()
-    original_url: string;
+export class UpdateUrlDto {
+
 
     @IsOptional()
     @MinLength(8, { message: "Alias is too short!" })
@@ -25,4 +23,8 @@ export class UpdateUrlDto extends PartialType(CreateUrlDto) {
     @IsDate()
     @Type(() => Date)
     expires_at: Date;
+
+    @IsOptional()
+    @IsBoolean()
+    is_active: boolean;
 }

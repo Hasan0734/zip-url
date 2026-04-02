@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import mongoose, { HydratedDocument } from "mongoose";
 
 export type UrlDocument = HydratedDocument<Url>;
 
@@ -8,20 +8,23 @@ export class Url {
     @Prop({ required: true, })
     original_url: string;
 
-    @Prop({ required: false, unique: true })
+    @Prop({ unique: true, sparse: true, default: undefined })
     custom_alias: string;
 
-    @Prop({ requireed: false })
+    @Prop({ default: undefined })
     password: string;
 
-    @Prop({ required: false })
+    @Prop({ required: false, default: undefined })
     expires_at: Date;
 
     @Prop({ required: true, default: true })
-    isActive: boolean;
+    is_active: boolean;
 
     @Prop({ required: true, unique: true })
     short_code: string;
+
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
+    owner_id: mongoose.Types.ObjectId;
 
 }
 
