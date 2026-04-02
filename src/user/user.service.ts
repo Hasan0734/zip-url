@@ -1,0 +1,53 @@
+import { User, UserSchema } from './schemas/user.schema';
+
+import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { CreateUserDto } from 'src/auth/dto/create-user.dto';
+import { UpdateUserDto } from 'src/auth/dto/update-user.dto';
+
+
+@Injectable()
+export class UserService {
+  constructor(@InjectModel(User.name) private userModel) { }
+
+  async registerUser(createUserDto: CreateUserDto) {
+    try {
+
+      return await this.userModel.create(createUserDto);
+    } catch (error) {
+      console.log(error)
+      const DUPLICATE_KEY_CODE = 11000;
+      if (error.code === DUPLICATE_KEY_CODE) {
+        throw new ConflictException("Email is already taken!")
+      }
+      throw error;
+    }
+  }
+  async findUserByEmail(email: string) {
+    try {
+      const res = await this.userModel.findOne({ email });
+      return res;
+    } catch (error) {
+      throw error
+    }
+  }
+  async findUserById(_id: string) {
+    try {
+      const res = await this.userModel.findOne({ _id }).select("-password");
+      return res;
+    } catch (error) {
+      throw error
+    }
+  }
+  async findUserAndUpdate(_id: string, userUpdateDto: UpdateUserDto) {
+    try {
+      const user = await this.userModel.findOneAndUpdate({_id}, userUpdateDto, {
+        returnDocument: 'after'
+      }).select("-password")
+      
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+}
