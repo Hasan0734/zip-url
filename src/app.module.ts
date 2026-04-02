@@ -14,8 +14,8 @@ import { ClicksModule } from './clicks/clicks.module';
     MongooseModule.forRoot(process.env.DATABASE_URI as string),
     AuthModule,
     UserModule,
+    ClicksModule,
     UrlsModule,
-    ClicksModule
   ],
   controllers: [AppController],
   providers: [AppService],

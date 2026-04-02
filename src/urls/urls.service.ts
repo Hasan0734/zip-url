@@ -32,7 +32,6 @@ export class UrlsService {
   async findAll(owner_id: string) {
     try {
       const urls = await this.urlModel.find({ owner_id }).exec();
-
       return urls;
     } catch (error) {
       throw error;
@@ -41,6 +40,18 @@ export class UrlsService {
 
   findOne(id: number) {
     return `This action returns a #${id} url`;
+  }
+  async findUrlByCode(short_code: string) {
+    try {
+      const url = await this.urlModel.findOne({ short_code });
+      console.log(url)
+      if (!url) {
+        throw new NotFoundException()
+      }
+      return url
+    } catch (error) {
+      throw error
+    }
   }
 
   async update(_id: string, updateUrlDto: UpdateUrlDto) {
