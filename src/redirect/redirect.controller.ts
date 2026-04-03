@@ -8,19 +8,25 @@ export class RedirctController {
     @Get(':short_code')
     async getUrl(@Param('short_code') short_code: string, @Res() res) {
 
+        const result = await this.urlsService.findUrlByCode(short_code);
+        switch (result.type) {
+            case 'NOT_FOUND':
+                return res.render('not_found.hbs');
 
-        const url = await this.urlsService.findUrlByCode(short_code);
-        
-        if (url.status === 'failed') {
-            return {message: ""};
+            case 'DISABLED':
+                return res.render('disabled.hbs');
+
+            case 'EXPIRED':
+                return res.render('expired.hbs');
+
+            case 'OK':
+                const url = result.data;
+
+                if (url.password) {
+                    return res.render('index', { short_code });
+                }
+
+                return res.redirect(302, url.original_url);
         }
-
-        if (url?.password) {
-
-          return res.render('index')
-
-        }
-
-        return res.redirect(302, url.original_url)
     }
 }

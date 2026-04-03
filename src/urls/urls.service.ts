@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, GoneException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, GoneException, UnauthorizedException, Res } from '@nestjs/common';
 import { CreateUrlDto } from './dto/create-url.dto';
 import { UpdateUrlDto } from './dto/update-url.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -17,8 +17,8 @@ export class UrlsService {
       const res = await this.urlModel.create({ ...createUrlDto, short_code, owner_id });
 
       return res;
-    } catch (err:unknown) {
-      const error = err as {code?:number, keyValue: string[]}
+    } catch (err: unknown) {
+      const error = err as { code?: number, keyValue: string[] }
       const keys = Object.keys(error.keyValue)
       const DUPLICATE_KEY_CODE = 11000;
 
@@ -42,24 +42,24 @@ export class UrlsService {
   findOne(id: number) {
     return `This action returns a #${id} url`;
   }
-  
+
   async findUrlByCode(short_code: string) {
+    // console.log(res)
     try {
-      const url = await this.urlModel.findOne({ short_code });
+      const url = await this.urlModel.findOne({ $or: [{ short_code }, { custom_alias: short_code }] });
 
       if (!url) {
-        throw new NotFoundException()
+        return { type: 'NOT_FOUND' };
       }
 
       if (!url.is_active) {
-        throw new GoneException('Disabled');
+        return { type: 'DISABLED' };
       }
 
-      if (url?.expires_at < new Date()) {
-        throw new GoneException('Link expired');
+      if (url.expires_at && url.expires_at < new Date()) {
+        return { type: 'EXPIRED' };
       }
-
-      return url
+      return { type: 'OK', data: url };
     } catch (error) {
       throw error
     }
