@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Req, Res } from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { CreateUrlDto } from './dto/create-url.dto';
 import { UpdateUrlDto } from './dto/update-url.dto';
@@ -40,5 +40,21 @@ export class UrlsController {
   @UseGuards(AuthGuard)
   remove(@Param('id') id: string) {
     return this.urlsService.remove(id);
+  }
+
+  @Post('/verify/:short_code')
+
+  async verifyUrlPassword(@Param('short_code') short_code: string, @Body() body) {
+    const password = body?.password
+    const url = await this.urlsService.findUrlByCode(short_code);
+
+    if(!password) {
+      return {message: "Password is required!"}
+    }
+
+    if (url.password !== password) {
+      return { message: "Password not matched!", status: 'failed' }
+    }
+    return { original_url: url.original_url, status: 'success' }
   }
 }

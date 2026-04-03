@@ -7,6 +7,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { UrlsModule } from './urls/urls.module';
 import { ClicksModule } from './clicks/clicks.module';
+import { RedirectModule } from './redirect/redirect.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ClicksModule } from './clicks/clicks.module';
     UserModule,
     ClicksModule,
     UrlsModule,
+    RedirectModule
   ],
   controllers: [AppController],
   providers: [AppService],
