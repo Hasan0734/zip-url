@@ -4,7 +4,6 @@ import { UrlsController } from './urls.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Url, UrlSchema } from './schemas/url.schema';
 import { ClicksModule } from 'src/clicks/clicks.module';
-import { Click, ClickSchema } from 'src/clicks/schemas/click.schema';
 
 @Module({
   controllers: [UrlsController],

@@ -98,6 +98,12 @@ export class UrlsService {
   }
 
   async incrementClick(_id: string) {
-    await this.urlModel.updateOne({ _id }, { $inc: { click_count: 1 } })
+
+    try {
+      await this.urlModel.updateOne({ _id }, { $inc: { click_count: 1 } })
+
+    } catch (error) {
+      throw error;
+    }
   }
 }

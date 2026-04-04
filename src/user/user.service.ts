@@ -14,7 +14,8 @@ export class UserService {
     try {
 
       return await this.userModel.create(createUserDto);
-    } catch (error) {
+    } catch (err) {
+      const error = err as { code?: number }
       const DUPLICATE_KEY_CODE = 11000;
       if (error.code === DUPLICATE_KEY_CODE) {
         throw new ConflictException("Email is already taken!")

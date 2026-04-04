@@ -10,26 +10,23 @@ export class Click {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Url" })
     url_id: mongoose.Types.ObjectId;
 
-    @Prop({ required: true })
-    ip_address: string;
+    @Prop()
+    ip: string;
 
-    @Prop({ required: true })
-    user_agent: string;
-
-    @Prop({ required: true })
+    @Prop()
     country: string;
 
-    @Prop({ required: true })
+    @Prop()
     city: string;
 
-    @Prop({ required: true })
+    @Prop()
     device: string;
 
-    @Prop({ required: true })
+    @Prop()
     browser: string;
 
-    @Prop({ required: true })
-    referrer: string;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Url" })
+    owner_id: mongoose.Types.ObjectId;
 
 }
 
