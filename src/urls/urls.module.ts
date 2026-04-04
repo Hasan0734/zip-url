@@ -8,10 +8,9 @@ import { ClicksModule } from 'src/clicks/clicks.module';
 @Module({
   controllers: [UrlsController],
   providers: [UrlsService],
-  imports: [
+  imports: [ClicksModule,
     MongooseModule.forFeature([{ name: Url.name, schema: UrlSchema }]),
-
-    ClicksModule],
+  ],
   exports: [UrlsService],
 
 })

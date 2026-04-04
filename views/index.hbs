@@ -60,7 +60,6 @@
           body: JSON.stringify({ password })
         })
         const json = await res.json();
-
         if (json.status === 'failed') {
           showMessage(json.message || "Invalid password", "text-red-500");
 

@@ -26,7 +26,6 @@ export class AuthController {
   @Get("/profile")
   @UseGuards(AuthGuard)
   async getProfile(@Request() req) {
-    console.log(req.user)
     const userId = req.user.sub
     const user = await this.userService.findUserById(userId)
 
@@ -39,7 +38,6 @@ export class AuthController {
     const userId = req.user.sub;
 
     const res = await this.authService.updateUserById(userId, updateUserDto)
-    console.log(res)
     return res;
   }
 
