@@ -6,12 +6,6 @@ import { AuthGuard } from 'src/auth/auth.guard';
 export class ClicksController {
   constructor(private readonly clicksService: ClicksService) { }
 
-  // @Post()
-  // create(@Body() createClickDto: CreateClickDto) {
-  //     console.log(createClickDto)
-  //   return this.clicksService.create(createClickDto);
-  // }
-
   @Get()
   @UseGuards(AuthGuard)
   findAll(@Request() req) {

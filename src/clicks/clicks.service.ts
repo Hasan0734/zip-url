@@ -29,7 +29,13 @@ export class ClicksService {
 
   async findOne(id: string) {
     try {
-      const result = await this.clickModel.findOne({ _id: id }).exec()
+      const result = await this.clickModel
+        .findOne({ _id: id })
+        .populate({
+          path: 'owner',
+          select: "first_name last_name email -_id"
+        })
+        .populate({ path: 'url', select: '-createdAt -updatedAt -owner_id -__v' });
 
       if (!result) {
         throw new NotFoundException()

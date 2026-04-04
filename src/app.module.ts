@@ -8,18 +8,37 @@ import { ConfigModule } from '@nestjs/config';
 import { UrlsModule } from './urls/urls.module';
 import { ClicksModule } from './clicks/clicks.module';
 import { RedirectModule } from './redirect/redirect.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     MongooseModule.forRoot(process.env.DATABASE_URI as string),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 10,
+        },
+     
+      ],
+      errorMessage: "WOW too youg too many requested!"
+    }),
+    CacheModule.register({
+      isGlobal: true
+    }),
     AuthModule,
     UserModule,
     ClicksModule,
     UrlsModule,
-    RedirectModule
+    RedirectModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, {
+    provide: APP_GUARD,
+    useClass: ThrottlerGuard,
+  },],
 })
 export class AppModule { }

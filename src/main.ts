@@ -14,7 +14,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
   app.setViewEngine('hbs')
-  app.set('trust proxy', 'loopback')
+  app.set('trust proxy', true)
 
   await app.listen(process.env.PORT ?? 3000);
 }

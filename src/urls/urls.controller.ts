@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Headers, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Headers, Res, Req } from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { CreateUrlDto } from './dto/create-url.dto';
 import { UpdateUrlDto } from './dto/update-url.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { ClicksService } from 'src/clicks/clicks.service';
 import { parseUserAgent } from 'src/lib/parse-user-agent';
+import { getGeoData } from 'src/lib/get-geo-info';
 
 @Controller('urls')
 export class UrlsController {
@@ -44,7 +45,7 @@ export class UrlsController {
   }
 
   @Post('/verify/:short_code')
-  async verifyUrlPassword(@Param('short_code') short_code: string, @Body() body, @Res() res, @Headers() headers) {
+  async verifyUrlPassword(@Param('short_code') short_code: string, @Body() body, @Res() res, @Req() req) {
 
     const result = await this.urlsService.findUrlByCode(short_code);
 
@@ -68,18 +69,23 @@ export class UrlsController {
 
           return res.send({ status: 'failed', message: "Password wrong!" });
         }
-        const userAgent = headers['user-agent'] ?? "unknown";
+        // const ip =
+        //   typeof req.headers['x-forwarded-for'] === 'string'
+        //     ? req.headers['x-forwarded-for'].split(',')[0]
+        //     : req.ip;
 
-        const ip = headers["x-forwarded-for"]?.split(",")[0]?.trim() ??
-          headers["x-real-ip"] ??
-          "0.0.0.0";
+        // const geoData = await getGeoData(ip);
+        // const userAgent = req.headers['user-agent'] ?? "unknown";
+        // const client = parseUserAgent(userAgent);
 
-        const client = parseUserAgent(userAgent);
+        // const clickDto = { owner: url.owner_id, url: url._id, ip, country: geoData.country, city: geoData.city, device: client.device_type, browser: client.browser }
 
-        this.urlsService.incrementClick(url._id)
-        this.clicksService.create({ ...client, ip })
+        // this.clicksService.create(clickDto);
+        // this.urlsService.incrementClick(url._id)
 
-        return res.send({ url: url.original_url, status: "success" });
+      
+
+        return res.send({ status: 'failed', message: "Password wrong!" });
     }
 
 

@@ -1,5 +1,7 @@
 import mongoose, { HydratedDocument, ObjectId } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Url } from 'src/urls/schemas/url.schema';
+import { User } from 'src/user/schemas/user.schema';
 
 
 export type ClickDocument = HydratedDocument<Click>;
@@ -8,7 +10,7 @@ export type ClickDocument = HydratedDocument<Click>;
 export class Click {
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Url" })
-    url_id: mongoose.Types.ObjectId;
+    url: Url
 
     @Prop()
     ip: string;
@@ -25,8 +27,8 @@ export class Click {
     @Prop()
     browser: string;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Url" })
-    owner_id: mongoose.Types.ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
+    owner: User;
 
 }
 
