@@ -3,11 +3,16 @@ import { UrlsService } from './urls.service';
 import { UrlsController } from './urls.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Url, UrlSchema } from './schemas/url.schema';
+import { ClicksModule } from 'src/clicks/clicks.module';
+import { Click, ClickSchema } from 'src/clicks/schemas/click.schema';
 
 @Module({
   controllers: [UrlsController],
   providers: [UrlsService],
-  imports: [MongooseModule.forFeature([{ name: Url.name, schema: UrlSchema }])],
+  imports: [
+    MongooseModule.forFeature([{ name: Url.name, schema: UrlSchema }]),
+
+    ClicksModule],
   exports: [UrlsService],
 
 })

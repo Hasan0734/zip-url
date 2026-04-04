@@ -1,17 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Headers, Res } from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { CreateUrlDto } from './dto/create-url.dto';
 import { UpdateUrlDto } from './dto/update-url.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { ClicksService } from 'src/clicks/clicks.service';
+import { parseUserAgent } from 'src/lib/parse-user-agent';
 
 @Controller('urls')
 export class UrlsController {
-  constructor(private readonly urlsService: UrlsService) { }
+  constructor(private readonly urlsService: UrlsService, private clicksService: ClicksService) { }
 
   @Post()
   @UseGuards(AuthGuard)
   async create(@Body() createUrlDto: CreateUrlDto, @Request() req) {
-
     const userId = req.user.sub
     return await this.urlsService.create(createUrlDto, userId);
   }
@@ -43,10 +44,10 @@ export class UrlsController {
   }
 
   @Post('/verify/:short_code')
-  async verifyUrlPassword(@Param('short_code') short_code: string, @Body() body, @Res() res) {
+  async verifyUrlPassword(@Param('short_code') short_code: string, @Body() body, @Res() res, @Headers() headers) {
 
     const result = await this.urlsService.findUrlByCode(short_code);
-    
+
     switch (result.type) {
       case 'NOT_FOUND':
         return res.render('not_found.hbs');
@@ -67,9 +68,20 @@ export class UrlsController {
 
           return res.send({ status: 'failed', message: "Password wrong!" });
         }
+        const userAgent = headers['user-agent'] ?? "unknown";
+
+        const ip = headers["x-forwarded-for"]?.split(",")[0]?.trim() ??
+          headers["x-real-ip"] ??
+          "0.0.0.0";
+
+        const client = parseUserAgent(userAgent);
+
+        this.urlsService.incrementClick(url._id)
+        this.clicksService.create({ ...client, ip })
+
         return res.send({ url: url.original_url, status: "success" });
     }
-    
+
 
   }
 }

@@ -59,6 +59,7 @@ export class UrlsService {
       if (url.expires_at && url.expires_at < new Date()) {
         return { type: 'EXPIRED' };
       }
+
       return { type: 'OK', data: url };
     } catch (error) {
       throw error
@@ -94,5 +95,9 @@ export class UrlsService {
     } catch (error) {
       throw error
     }
+  }
+
+  async incrementClick(_id: string) {
+    await this.urlModel.updateOne({ _id }, { $inc: { click_count: 1 } })
   }
 }

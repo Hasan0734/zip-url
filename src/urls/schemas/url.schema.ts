@@ -6,7 +6,7 @@ export type UrlDocument = HydratedDocument<Url>;
 @Schema({ timestamps: true })
 export class Url {
     @Prop({ required: true, })
-    original_url: string;
+    original_url!: string;
 
     @Prop({ unique: true, sparse: true, default: undefined })
     custom_alias: string;
@@ -22,6 +22,9 @@ export class Url {
 
     @Prop({ required: true, unique: true })
     short_code: string;
+
+    @Prop({ default: 0 })
+    click_count: number;
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
     owner_id: mongoose.Types.ObjectId;

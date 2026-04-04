@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
+import { beforeEach, describe, it } from 'node:test';
+import expectCookies from 'supertest/lib/cookies';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -13,6 +15,6 @@ describe('AuthService', () => {
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expectCookies(service:sting).toBeDefined();
   });
 });
