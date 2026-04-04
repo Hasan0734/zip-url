@@ -45,9 +45,8 @@ export class UrlsController {
   @Post('/verify/:short_code')
   async verifyUrlPassword(@Param('short_code') short_code: string, @Body() body, @Res() res) {
 
-
     const result = await this.urlsService.findUrlByCode(short_code);
-
+    
     switch (result.type) {
       case 'NOT_FOUND':
         return res.render('not_found.hbs');
@@ -59,18 +58,18 @@ export class UrlsController {
       case 'OK':
         const url = result.data;
         if (!body?.password) {
-          return res.render('index', {
-            error: 'Password is required',
+          return res.send({
+            message: 'Password is required',
+            status: 'failed'
           });
         }
-        console.log(url)
         if (url.password !== body.password) {
-          return res.render('index', {
-            error: 'Wrong password',
-          });
+
+          return res.send({ status: 'failed', message: "Password wrong!" });
         }
-       return res.redirect(url.original_url);
+        return res.send({ url: url.original_url, status: "success" });
     }
+    
 
   }
 }
