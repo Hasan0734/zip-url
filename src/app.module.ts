@@ -11,6 +11,7 @@ import { RedirectModule } from './redirect/redirect.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CacheModule } from '@nestjs/cache-manager';
+import { createKeyv } from '@keyv/redis';
 
 @Module({
   imports: [
@@ -27,8 +28,10 @@ import { CacheModule } from '@nestjs/cache-manager';
       errorMessage: "WOW too youg too many requested!"
     }),
     CacheModule.register({
-      isGlobal: true
+      isGlobal: true,
+      stores: [createKeyv(process.env.REDIS_STORE)]
     }),
+
     AuthModule,
     UserModule,
     ClicksModule,
