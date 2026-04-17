@@ -1,7 +1,8 @@
-import { User, UserSchema } from './schemas/user.schema';
+import { User } from './schemas/user.schema';
 
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { Types } from 'mongoose';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { UpdateUserDto } from 'src/auth/dto/update-user.dto';
 
@@ -48,7 +49,7 @@ export class UserService {
       throw error
     }
   }
-  async findUserAndUpdate(_id: string, userUpdateDto: UpdateUserDto) {
+  async findUserAndUpdate(_id: Types.ObjectId, userUpdateDto: UpdateUserDto) {
     try {
       const user = await this.userModel.findOneAndUpdate({ _id }, userUpdateDto, {
         returnDocument: 'after'
@@ -63,7 +64,7 @@ export class UserService {
       throw error;
     }
   }
-  async updatePassword(_id: string, password: string) {
+  async updatePassword(_id: Types.ObjectId, password: string) {
     try {
       const user = await this.userModel.findOneAndUpdate({ _id }, { password }, {
         returnDocument: 'after'

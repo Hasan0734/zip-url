@@ -5,8 +5,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UserService } from 'src/user/user.service';
 import { AuthGuard } from './auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ResetPasswordDto } from './dto/ResetPassword.dto';
+import { RequestPasswordResetDto } from './dto/RequestPasswordReset.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResetPasswordDto } from './dto/ResetPassword.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -26,12 +27,17 @@ export class AuthController {
   }
 
   @Post("/request-password-reset")
-  async requestPasswordRequest(@Body() data: ResetPasswordDto) {
+  async requestPasswordRequest(@Body() data: RequestPasswordResetDto) {
 
     return this.authService.requestPasswordReset(data)
   }
 
-  @Post("/change-password")
+  @Post("/reset-password")
+  async resetPassword(@Body() passwordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(passwordDto)
+  }
+
+  @Patch("/change-password")
   @UseGuards(AuthGuard)
   async changePassword(@Body() passwordDto: ChangePasswordDto, @Request() req) {
     const userId = req.user.sub
