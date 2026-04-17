@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { join } from 'node:path';
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -9,7 +9,15 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
-    forbidNonWhitelisted: true
+    forbidNonWhitelisted: true,
+    stopAtFirstError: true,
+    // exceptionFactory: (errors:any) => {
+    //   const result = errors.map((error) => ({
+    //     property: error.property,
+    //     message: Object.values(error.constraints)[0],
+    //   }));
+    //   return new BadRequestException(result);
+    // },
   }))
 
   app.useStaticAssets(join(__dirname, '..', 'public'));

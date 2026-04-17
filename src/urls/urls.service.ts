@@ -54,9 +54,6 @@ export class UrlsService {
       if (data) return { type: 'OK', data };
 
       const url = await this.urlModel.findOne({ $or: [{ short_code }, { custom_alias: short_code }] });
-
-
-
       if (!url) {
         return { type: 'NOT_FOUND' };
       }

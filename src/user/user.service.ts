@@ -13,7 +13,9 @@ export class UserService {
   async registerUser(createUserDto: CreateUserDto) {
     try {
 
-      return await this.userModel.create(createUserDto);
+      const { confirm_password, ...userData } = createUserDto;
+
+      return await this.userModel.create(userData);
     } catch (err) {
       const error = err as { code?: number }
       const DUPLICATE_KEY_CODE = 11000;
@@ -49,6 +51,21 @@ export class UserService {
   async findUserAndUpdate(_id: string, userUpdateDto: UpdateUserDto) {
     try {
       const user = await this.userModel.findOneAndUpdate({ _id }, userUpdateDto, {
+        returnDocument: 'after'
+      }).select("-password")
+
+      if (!user) {
+        throw new NotFoundException()
+      }
+
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+  async updatePassword(_id: string, password: string) {
+    try {
+      const user = await this.userModel.findOneAndUpdate({ _id }, { password }, {
         returnDocument: 'after'
       }).select("-password")
 
