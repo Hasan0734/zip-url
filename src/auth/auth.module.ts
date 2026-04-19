@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { UserModule } from 'src/user/user.module';
 import { JwtModule } from '@nestjs/jwt';
 import { PasswordReset, PasswordResetSchema } from 'src/user/schemas/password-reset.schema';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
   controllers: [AuthController],
@@ -19,6 +20,7 @@ import { PasswordReset, PasswordResetSchema } from 'src/user/schemas/password-re
       signOptions: { expiresIn: '3600s' }
     }),
     MongooseModule.forFeature([{ name: PasswordReset.name, schema: PasswordResetSchema }]),
+    MailModule
 
   ],
 })

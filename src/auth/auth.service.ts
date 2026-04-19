@@ -14,32 +14,39 @@ import crypto from 'crypto'
 import { InjectModel } from '@nestjs/mongoose';
 import { PasswordReset } from 'src/user/schemas/password-reset.schema';
 import { ResetPasswordDto } from './dto/ResetPassword.dto';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private userService: UserService, private jwtService: JwtService, @InjectModel(PasswordReset.name) private passwordResetModel) { }
+  constructor(private userService: UserService, private jwtService: JwtService, @InjectModel(PasswordReset.name) private passwordResetModel, private mailService: MailService) { }
 
   async registerUser(createUserDto: CreateUserDto) {
-
     const salt = await bcrypt.genSalt(10);
     const password = await bcrypt.hash(createUserDto.password, salt);
-
     const user = await this.userService.registerUser({ ...createUserDto, password, role: Role.User })
+
     if (user.first_name) {
-      return { message: "Registerd successfully.", status: 'success' };
+      await this.mailService.sendEmail({
+        to: user.email,
+        subject: 'Welcome',
+        template: 'welcome',
+        context: {
+          name: user.first_name,
+        }
+      })
+      return { message: "Registration successfully.", status: 'success' };
 
     }
-    return user;
+
+    return { message: "Registration failed", status: 'failed' };
   }
 
   async userSignIn(signInDto: SignInDto) {
     const user = await this.userService.findUserByEmail(signInDto.email);
     const checkPassword = await bcrypt.compare(signInDto.password, user.password);
-
     if (!checkPassword) {
       throw new UnauthorizedException()
     }
-
     return {
       access_token: await this.jwtService.signAsync(generatePayload(user))
     };
@@ -47,7 +54,6 @@ export class AuthService {
 
   async updateUserById(id: Types.ObjectId, updateUserDto: UpdateUserDto) {
     const user = await this.userService.findUserAndUpdate(id, updateUserDto);
-
     return {
       access_token: await this.jwtService.signAsync(generatePayload(user))
     };
@@ -56,25 +62,47 @@ export class AuthService {
   async changePassword(id: Types.ObjectId, changePassword: ChangePasswordDto) {
     const salt = await bcrypt.genSalt(10)
     const hashPassword = await bcrypt.hash(changePassword.new_password, salt);
+    const user = await this.userService.updatePassword(id, hashPassword);
 
-    await this.userService.updatePassword(id, hashPassword)
+    await this.mailService.sendEmail({
+      from: process.env.SECURITY_EMAIL,
+      to: user.email,
+      subject: 'Changed password',
+      template: 'changed-password',
+      context: {
+        name: user.first_name,
+        secure_account_link: ""
+      }
+    })
+
+
     return { message: "Password changed!", status: 'success' }
   }
-
-
 
   async requestPasswordReset(data: RequestPasswordResetDto) {
     try {
       const email = data.email
-
       const user = await this.userService.findUserByEmail(email);
       if (!user) throw new NotFoundException()
-
       const token = crypto.randomBytes(32).toString('hex')
-
       await this.passwordResetModel.create({ token, user_id: user._id })
 
-      return { message: `We sent a password reset link to ${email}. Please check your inbox and follow the instructions to reset your password.`, status: 'success', token: token }
+      await this.mailService.sendEmail({
+        from: process.env.SECURITY_EMAIL,
+        to: user.email,
+        subject: 'Reset password',
+        template: 'reset-password',
+        context: {
+          reset_link: `http://localhost:3000/reset-password?token=${token}`,
+          name: user.first_name
+        }
+      })
+
+      return {
+        message:
+          `We sent a password reset link to ${email}. Please check your inbox and follow the instructions to reset your password.`,
+        status: 'success'
+      }
     } catch (error) {
       throw error
     }
@@ -84,15 +112,24 @@ export class AuthService {
 
     try {
       const resetRecord = await this.passwordResetModel.findOne({ token: resetDto.token });
-
       if (!resetRecord) {
         throw new BadRequestException('Invalid or expired token')
       }
-
       const salt = await bcrypt.genSalt(10)
       const hashPassword = await bcrypt.hash(resetDto.new_password, salt);
+      const user = await this.userService.updatePassword(resetRecord.user_id, hashPassword);
 
-      await this.userService.updatePassword(resetRecord.user_id, hashPassword)
+      await this.mailService.sendEmail({
+        from: process.env.SECURITY_EMAIL,
+        to: user.email,
+        subject: 'Changed password',
+        template: 'changed-password',
+        context: {
+          name: user.first_name
+        }
+      })
+
+      await this.passwordResetModel.deleteOne({ _id: resetRecord._id })
       return { message: "Password reseted", status: 'success' }
 
     } catch (error) {

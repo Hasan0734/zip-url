@@ -12,10 +12,11 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CacheModule } from '@nestjs/cache-manager';
 import { createKeyv } from '@keyv/redis';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({isGlobal: true}),
     MongooseModule.forRoot(process.env.DATABASE_URI as string),
     ThrottlerModule.forRoot({
       throttlers: [
@@ -37,6 +38,7 @@ import { createKeyv } from '@keyv/redis';
     ClicksModule,
     UrlsModule,
     RedirectModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService, {

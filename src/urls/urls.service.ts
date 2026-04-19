@@ -15,16 +15,13 @@ export class UrlsService {
 
   async create(createUrlDto: CreateUrlDto, owner_id: string) {
     const short_code = nanoid(8)
-
     try {
       const res = await this.urlModel.create({ ...createUrlDto, short_code, owner_id });
-
       return res;
     } catch (err: unknown) {
       const error = err as { code?: number, keyValue: string[] }
       const keys = Object.keys(error.keyValue)
       const DUPLICATE_KEY_CODE = 11000;
-
       if (error.code === DUPLICATE_KEY_CODE) {
         const field = keys.map((key) => key)
         throw new ConflictException(`${field}, is already taken!`)
@@ -50,24 +47,18 @@ export class UrlsService {
     try {
       const shortCodeKey = `short:${short_code}`;
       const data = await this.cache.get(shortCodeKey);
-
       if (data) return { type: 'OK', data };
-
       const url = await this.urlModel.findOne({ $or: [{ short_code }, { custom_alias: short_code }] });
       if (!url) {
         return { type: 'NOT_FOUND' };
       }
-
       await this.cache.set(shortCodeKey, url, 3600000) // 3600000 1hours cache
-
       if (!url.is_active) {
         return { type: 'DISABLED' };
       }
-
       if (url.expires_at && url.expires_at < new Date()) {
         return { type: 'EXPIRED' };
       }
-
       return { type: 'OK', data: url };
     } catch (error) {
       throw error
@@ -80,7 +71,6 @@ export class UrlsService {
       const updated = await this.urlModel.findOneAndUpdate({ _id }, updateUrlDto, {
         returnDocument: 'after'
       })
-
       if (!updated) {
         throw new NotFoundException()
       }
@@ -94,22 +84,18 @@ export class UrlsService {
 
     try {
       const url = await this.urlModel.findOneAndDelete({ _id });
-
       if (!url) {
         throw new NotFoundException()
       }
       return { message: "URL Deleted!", status: "success" };
-
     } catch (error) {
       throw error
     }
   }
 
   async incrementClick(_id: string) {
-
     try {
       await this.urlModel.updateOne({ _id }, { $inc: { click_count: 1 } })
-
     } catch (error) {
       throw error;
     }

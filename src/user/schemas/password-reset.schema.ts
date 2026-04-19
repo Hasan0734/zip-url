@@ -12,7 +12,7 @@ export class PasswordReset {
     @Prop({ type: Types.ObjectId, ref: 'User', required: true })
     user_id?: Types.ObjectId
 
-    @Prop({ type: Date, default: Date.now(), expires:  300}) //3600
+    @Prop({ type: Date, default: Date.now(), expires:  3600}) //3600
     createdAt!: Date;
 }
 

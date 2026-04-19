@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Basic reset for email clients */
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f4f4f4; padding-bottom: 40px; }
+        .main-table { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; margin-top: 40px; border-collapse: collapse; }
+        .content { padding: 40px 30px; color: #333333; line-height: 1.6; }
+        .button-container { padding: 30px 0; text-align: center; }
+        .button { background-color: #007bff; color: #ffffff !important; padding: 14px 28px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; }
+        .footer { text-align: center; font-size: 12px; color: #888888; padding: 20px; }
+        
+        /* Mobile adjustment */
+        @media screen and (max-width: 600px) {
+            .main-table { width: 95% !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <table class="main-table">
+            <!-- Header/Logo -->
+            <tr>
+                <td style="padding: 30px; text-align: center; background-color: #1a1a1a;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px;">ZipUrl</h1>
+                </td>
+            </tr>
+            <!-- Body -->
+            <tr>
+                <td class="content">
+                    <h2 style="margin-top: 0; color: #1a1a1a;">Welcome to the community!</h2>
+                    <p>Hi {{name}},</p>
+                    <p>We're thrilled to have you on board. Your account has been successfully created, and you're now ready to explore everything <strong>ZipUrl</strong> has to offer.</p>
+                    
+                    <p>To help you get the most out of your experience, click the button below to jump into your dashboard and complete your profile.</p>
+                    
+                    <div class="button-container">
+                        <a href="{{dashboard_url}}" class="button">Get Started Now</a>
+                    </div>
+                    
+                    <p>If you have any questions or need a hand getting set up, simply reply to this email. Our team is always here to help!</p>
+                    
+                    <p>Cheers,<br>The ZipUrl Team</p>
+                </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+                <td class="footer">
+                    &copy; 2026 ZipUrl, Inc. <br>
+                    123 Tech Lane, Silicon Valley, CA <br>
+                    <a href="#" style="color: #888888;">Unsubscribe</a> | <a href="#" style="color: #888888;">Support</a>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

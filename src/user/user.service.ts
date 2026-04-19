@@ -13,9 +13,7 @@ export class UserService {
 
   async registerUser(createUserDto: CreateUserDto) {
     try {
-
       const { confirm_password, ...userData } = createUserDto;
-
       return await this.userModel.create(userData);
     } catch (err) {
       const error = err as { code?: number }
@@ -40,7 +38,6 @@ export class UserService {
   async findUserById(_id: string) {
     try {
       const user = await this.userModel.findOne({ _id }).select("-password");
-
       if (!user) {
         throw new NotFoundException()
       }
@@ -54,11 +51,9 @@ export class UserService {
       const user = await this.userModel.findOneAndUpdate({ _id }, userUpdateDto, {
         returnDocument: 'after'
       }).select("-password")
-
       if (!user) {
         throw new NotFoundException()
       }
-
       return user;
     } catch (error) {
       throw error;
@@ -69,11 +64,9 @@ export class UserService {
       const user = await this.userModel.findOneAndUpdate({ _id }, { password }, {
         returnDocument: 'after'
       }).select("-password")
-
       if (!user) {
         throw new NotFoundException()
       }
-
       return user;
     } catch (error) {
       throw error;
