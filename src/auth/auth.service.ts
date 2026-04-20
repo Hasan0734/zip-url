@@ -116,7 +116,7 @@ export class AuthService {
         subject: 'Reset password',
         template: 'reset-password',
         context: {
-          reset_link: `http://localhost:3000/reset-password?token=${token}`,
+          reset_link: `http://localhost:3000/auth/reset-password?token=${token}`,
           name: user.first_name
         }
       })
@@ -132,9 +132,10 @@ export class AuthService {
   }
 
   async resetPassword(resetDto: ResetPasswordDto) {
+      const hashedToken = crypto.createHash('sha256').update(resetDto.token).digest('hex');
 
     try {
-      const resetRecord = await this.tokenModel.findOne({ token: resetDto.token });
+      const resetRecord = await this.tokenModel.findOne({ token:  hashedToken});
       if (!resetRecord) {
         throw new BadRequestException('Invalid or expired token')
       }

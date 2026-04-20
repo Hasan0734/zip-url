@@ -11,6 +11,8 @@ import { UpdateUrlDto } from './dto/update-url.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { ClicksService } from 'src/clicks/clicks.service';
 import { CacheInterceptor } from '@nestjs/cache-manager';
+import { EmailVerifiedGuard } from 'src/auth/email-verified.guard';
+import { RequireVerified } from 'src/auth/require-verified.decorator';
 
 @Controller('urls')
 export class UrlsController {
@@ -18,7 +20,8 @@ export class UrlsController {
     private clicksService: ClicksService,) { }
 
   @Post()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard)
+  @RequireVerified()
   async create(@Body() createUrlDto: CreateUrlDto, @Request() req) {
     const userId = req.user.sub
     return await this.urlsService.create(createUrlDto, userId);
@@ -81,6 +84,4 @@ export class UrlsController {
 
 
   }
-
-
 }
