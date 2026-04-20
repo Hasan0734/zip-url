@@ -10,6 +10,8 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/ResetPassword.dto';
 import { EmailVerifiedGuard } from './email-verified.guard';
 import { RequireVerified } from './require-verified.decorator';
+import { VerifyOtpDto } from './dto/verifyotp.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -76,8 +78,21 @@ export class AuthController {
   @Post('/resend-verification')
   async resendEmailVerification(@Body() email: EmailDto) {
     return this.authService.resendEmailVerification(email)
+  }
+
+  @Post('/verify-otp')
+  async verifiyOtp(@Body() otpDto: VerifyOtpDto) {
+    return this.authService.verifyOtp(otpDto)
 
   }
+
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Post('/resend-otp')
+  async resendOtp(@Body() email: EmailDto) {
+    return this.authService.resendOtp(email)
+
+  }
+
 
 
 }

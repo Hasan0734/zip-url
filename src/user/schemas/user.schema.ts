@@ -21,6 +21,9 @@ export class User {
     @Prop({default: false})
     is_verified!: boolean
 
+    @Prop({default: false})
+    two_factor_enabled!: boolean
+
     @Prop({ default: Role.User })
     role!: string
 

@@ -16,9 +16,13 @@ import { join } from 'path';
                     port: 1025,
                     secure: false,
                     ignoreTLS: true,
+                    auth: {
+                        user: process.env.SMPT_USER,
+                        pass: process.env.SMPT_PASSWORD
+                    }
                 },
                 defaults: {
-                    from: '"No replay" <no-replay@zipurl.com>',
+                    from: process.env.DEFAULT_EMAIL,
                 },
                 template: {
                     dir: join(__dirname, "./templates"),

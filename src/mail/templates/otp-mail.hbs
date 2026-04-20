@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Basic reset for email clients */
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f4f4f4; padding-bottom: 40px; }
+        .main-table { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; margin-top: 40px; border-collapse: collapse; }
+        .content { padding: 40px 30px; color: #333333; line-height: 1.6; text-align: center; }
+        
+        /* OTP Specific Styling */
+        .otp-container { background-color: #f8f9fa; border: 1px dashed #dee2e6; border-radius: 8px; padding: 20px; margin: 30px 0; }
+        .otp-code { font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #1a1a1a; margin: 0; }
+        
+        .footer { text-align: center; font-size: 12px; color: #888888; padding: 20px; }
+        
+        /* Mobile adjustment */
+        @media screen and (max-width: 600px) {
+            .main-table { width: 95% !important; }
+            .otp-code { font-size: 28px; letter-spacing: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <table class="main-table">
+            <!-- Header/Logo -->
+            <tr>
+                <td style="padding: 30px; text-align: center; background-color: #1a1a1a;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px;">ZipUrl</h1>
+                </td>
+            </tr>
+            <!-- Body -->
+            <tr>
+                <td class="content">
+                    <h2 style="margin-top: 0; color: #1a1a1a;">Verification Code</h2>
+                    <p>Use the following One-Time Password (OTP) to complete your request. This code is valid for <strong>10 minutes</strong>.</p>
+                    
+                    <div class="otp-container">
+                        <p class="otp-code">{{otp_code}}</p>
+                    </div>
+                    
+                    <p style="font-size: 14px; color: #666666;">If you didn’t request this code, you can safely ignore this email. Someone else might have typed your email address by mistake.</p>
+                </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+                <td class="footer">
+                    &copy; 2026 ZipUrl, Inc. <br>
+                    <a href="#" style="color: #888888;">Support</a> | <a href="#" style="color: #888888;">Security Tips</a>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

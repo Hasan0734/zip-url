@@ -1,4 +1,4 @@
-import { IsString,  MinLength, MaxLength, IsOptional } from "class-validator";
+import { IsString, MinLength, MaxLength, IsOptional, IsBoolean } from "class-validator";
 
 export class UpdateUserDto {
     @IsOptional()
@@ -13,6 +13,9 @@ export class UpdateUserDto {
     @MaxLength(20, { message: "Last name is too big!" })
     last_name!: string;
 
+    @IsOptional()
+    @IsBoolean()
+    two_factor_enabled!: boolean
 }
 
 

@@ -5,7 +5,6 @@ import { CreateUserDto } from './dto/create-user.dto';
 import bcrypt from "bcryptjs";
 import { JwtService } from '@nestjs/jwt';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { generatePayload } from './create-payload';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { EmailDto } from './dto/email.dto';
 import { Role } from './role.enum';
@@ -16,6 +15,8 @@ import { Tokens } from 'src/user/schemas/password-reset.schema';
 import { ResetPasswordDto } from './dto/ResetPassword.dto';
 import { MailService } from 'src/mail/mail.service';
 import { TokenType } from './tokentype.enum';
+import { VerifyOtpDto } from './dto/verifyotp.dto';
+import { generateOTP, generatePayload, handleHashOTP } from 'src/common/utils/auth.util';
 
 @Injectable()
 export class AuthService {
@@ -24,19 +25,14 @@ export class AuthService {
   async registerUser(createUserDto: CreateUserDto) {
     const salt = await bcrypt.genSalt(10);
     const password = await bcrypt.hash(createUserDto.password, salt);
-
     const user = await this.userService.registerUser({ ...createUserDto, password, role: Role.User })
-
 
     if (!user) {
       return { message: "Registration failed", status: 'failed' };
     }
 
     const token = await this.createToken(user._id, TokenType.EMAIL_VERIFICATION)
-
-    const verifyUrl = `http://localhost:3000/auth/verify-email?token=${token}`;
-
-
+    const verifyUrl = `${process.env.APP_URL}/auth/verify-email?token=${token}`;
     await this.mailService.sendEmail({
       to: user.email,
       subject: 'Welcome',
@@ -62,14 +58,16 @@ export class AuthService {
 
   async userSignIn(signInDto: SignInDto) {
     const user = await this.userService.findUserByEmail(signInDto.email);
-
     if (!user.is_verified) {
       throw new ForbiddenException('Please verify your email')
     }
-
     const checkPassword = await bcrypt.compare(signInDto.password, user.password);
     if (!checkPassword) {
       throw new UnauthorizedException()
+    }
+
+    if (user.two_factor_enabled) {
+      await this.handleTwoFactor(user._id, user.email)
     }
     return {
       access_token: await this.jwtService.signAsync(generatePayload(user))
@@ -116,7 +114,7 @@ export class AuthService {
         subject: 'Reset password',
         template: 'reset-password',
         context: {
-          reset_link: `http://localhost:3000/auth/reset-password?token=${token}`,
+          reset_link: `${process.env.APP_URL}/auth/reset-password?token=${token}`,
           name: user.first_name
         }
       })
@@ -132,10 +130,10 @@ export class AuthService {
   }
 
   async resetPassword(resetDto: ResetPasswordDto) {
-      const hashedToken = crypto.createHash('sha256').update(resetDto.token).digest('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetDto.token).digest('hex');
 
     try {
-      const resetRecord = await this.tokenModel.findOne({ token:  hashedToken});
+      const resetRecord = await this.tokenModel.findOne({ token: hashedToken });
       if (!resetRecord) {
         throw new BadRequestException('Invalid or expired token')
       }
@@ -193,7 +191,7 @@ export class AuthService {
 
     const token = await this.createToken(user._id, TokenType.EMAIL_VERIFICATION)
 
-    const verifyUrl = `http://localhost:3000/auth/verify-email?token=${token}`;
+    const verifyUrl = `${process.env.APP_URL}/auth/verify-email?token=${token}`;
 
 
     await this.mailService.sendEmail({
@@ -213,6 +211,34 @@ export class AuthService {
 
   }
 
+  async verifyOtp(verifyOtpDto: VerifyOtpDto) {
+
+    const hashed = handleHashOTP(verifyOtpDto.otp)
+    const user = await this.userService.findUserByEmail(verifyOtpDto.email);
+
+    const record = await this.tokenModel.findOne({ token: hashed, type: TokenType.OTP_VERIFICATION });
+
+    if (!record) {
+      throw new BadRequestException('Invalid OTP')
+    }
+
+    await this.tokenModel.deleteOne({ _id: record._id });
+    const access_token = await this.jwtService.signAsync(generatePayload(user))
+    return { message: "OTP verified successfully", status: 'success', access_token }
+
+
+  }
+
+  async resendOtp(emailDto: EmailDto) {
+    const user = await this.userService.findUserByEmail(emailDto.email);
+
+    if (!user.two_factor_enabled) {
+      return { message: "2FA is not enabled.", status: 'failed' }
+    }
+    await this.handleTwoFactor(user._id, user.email)
+    return;
+  }
+
   async createToken(userId: Types.ObjectId, type: TokenType) {
     const rawToken = crypto.randomBytes(32).toString('hex');
 
@@ -228,6 +254,34 @@ export class AuthService {
       return rawToken;
     } catch (error) {
       throw error;
+    }
+  }
+
+  async handleTwoFactor(userId: string, email: string) {
+    const otp = generateOTP();
+    const hashed = handleHashOTP(otp);
+
+    try {
+
+      await this.tokenModel.deleteMany({ user_id: userId, type: TokenType.OTP_VERIFICATION })
+      await this.tokenModel.create({ user_id: userId, token: hashed, type: TokenType.OTP_VERIFICATION })
+      await this.mailService.sendEmail({
+        to: email,
+        subject: 'OTP verification code',
+        template: 'otp-mail',
+        context: {
+          otp_code: otp,
+        }
+      })
+
+      return {
+        twoFARequired: true,
+        message: "Verifiy your otp. Check your email."
+      }
+
+    } catch (error) {
+      console.log(error)
+      throw new BadRequestException("2FA authentication enabled.")
     }
   }
 
