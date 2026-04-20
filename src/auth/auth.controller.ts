@@ -1,13 +1,15 @@
-import { Controller, Get, Post, Body, Request, UseGuards, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Request, UseGuards, Patch, Query, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/signIn-dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserService } from 'src/user/user.service';
 import { AuthGuard } from './auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { RequestPasswordResetDto } from './dto/RequestPasswordReset.dto';
+import { EmailDto } from './dto/email.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/ResetPassword.dto';
+import { EmailVerifiedGuard } from './email-verified.guard';
+import { RequireVerified } from './require-verified.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -22,12 +24,11 @@ export class AuthController {
   @Post('/signin')
   async signIn(@Body() signInDto: SignInDto) {
     const result = await this.authService.userSignIn(signInDto)
-
     return result
   }
 
   @Post("/request-password-reset")
-  async requestPasswordRequest(@Body() data: RequestPasswordResetDto) {
+  async requestPasswordRequest(@Body() data: EmailDto) {
 
     return this.authService.requestPasswordReset(data)
   }
@@ -38,14 +39,16 @@ export class AuthController {
   }
 
   @Patch("/change-password")
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard)
+  @RequireVerified()
   async changePassword(@Body() passwordDto: ChangePasswordDto, @Request() req) {
     const userId = req.user.sub
     return this.authService.changePassword(userId, passwordDto)
   }
 
   @Get("/profile")
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard)
+  @RequireVerified()
   async getProfile(@Request() req) {
     const userId = req.user.sub
     const user = await this.userService.findUserById(userId)
@@ -54,12 +57,27 @@ export class AuthController {
 
 
   @Patch('/profile')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, EmailVerifiedGuard)
+  @RequireVerified()
   async updateUser(@Request() req, @Body() updateUserDto: UpdateUserDto) {
     const userId = req.user.sub;
 
     const res = await this.authService.updateUserById(userId, updateUserDto)
     return res;
   }
+
+
+  @Get('/verify-email')
+  async VerifyEmail(@Query('token') token: string) {
+    return this.authService.verifyEmail(token)
+
+  }
+
+  @Post('/resend-verification')
+  async resendEmailVerification(@Body() email: EmailDto) {
+    return this.authService.resendEmailVerification(email)
+
+  }
+
 
 }
