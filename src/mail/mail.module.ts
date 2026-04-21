@@ -10,19 +10,20 @@ import { join } from 'path';
     imports: [
         ConfigModule.forRoot(),
         MailerModule.forRootAsync({
+
             useFactory: async () => ({
+
+
                 transport: {
                     host: process.env.SMPT_HOST,
-                    port: 1025,
-                    secure: false,
-                    ignoreTLS: true,
+                    port: 2525,
                     auth: {
-                        user: process.env.SMPT_USER,
-                        pass: process.env.SMPT_PASSWORD
-                    }
+                        user: process.env.SMTP_USER,
+                        pass: process.env.SMTP_PASSWORD,
+                    },
                 },
                 defaults: {
-                    from: process.env.DEFAULT_EMAIL,
+                    from: process.env.SMTP_EMAIL,
                 },
                 template: {
                     dir: join(__dirname, "./templates"),
@@ -36,3 +37,4 @@ import { join } from 'path';
     exports: [MailService]
 })
 export class MailModule { }
+

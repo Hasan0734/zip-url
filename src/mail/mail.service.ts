@@ -8,6 +8,7 @@ export class MailService {
     constructor(private readonly mailerService: MailerService) { }
 
     async sendEmail(mailDto: MailDto) {
+        console.log(mailDto)
 
         try {
             await this.mailerService.sendMail(mailDto);

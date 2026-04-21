@@ -71,25 +71,25 @@ export class AuthController {
 
   @Get('/verify-email')
   async VerifyEmail(@Query('token') token: string) {
-    return this.authService.verifyEmail(token)
+    return await this.authService.verifyEmail(token)
 
   }
 
   @Post('/resend-verification')
   async resendEmailVerification(@Body() email: EmailDto) {
-    return this.authService.resendEmailVerification(email)
+    return await this.authService.resendEmailVerification(email)
   }
 
   @Post('/verify-otp')
   async verifiyOtp(@Body() otpDto: VerifyOtpDto) {
-    return this.authService.verifyOtp(otpDto)
+    return await this.authService.verifyOtp(otpDto)
 
   }
 
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('/resend-otp')
   async resendOtp(@Body() email: EmailDto) {
-    return this.authService.resendOtp(email)
+    return await this.authService.resendOtp(email)
 
   }
 

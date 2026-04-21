@@ -67,8 +67,9 @@ export class AuthService {
     }
 
     if (user.two_factor_enabled) {
-      await this.handleTwoFactor(user._id, user.email)
+     return  await this.handleTwoFactor(user._id, user.email)
     }
+
     return {
       access_token: await this.jwtService.signAsync(generatePayload(user))
     };
@@ -184,6 +185,7 @@ export class AuthService {
   async resendEmailVerification(emailDto: EmailDto) {
 
     const user = await this.userService.findUserByEmail(emailDto.email);
+    console.log(user)
 
     if (user.is_verified) {
       return { message: "Already verified email.", status: 'failed' }
@@ -196,6 +198,7 @@ export class AuthService {
 
     await this.mailService.sendEmail({
       to: user.email,
+      from: process.env.SMTP_FROM,
       subject: 'Verify your email',
       template: 'email-verification',
       context: {
@@ -236,7 +239,7 @@ export class AuthService {
       return { message: "2FA is not enabled.", status: 'failed' }
     }
     await this.handleTwoFactor(user._id, user.email)
-    return;
+    return { message: 'OTP was sent, Check your inbox.', status: 'success' };
   }
 
   async createToken(userId: Types.ObjectId, type: TokenType) {
