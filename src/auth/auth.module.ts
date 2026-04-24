@@ -17,7 +17,7 @@ import { MailModule } from 'src/mail/mail.module';
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '15m' }
+      signOptions: { expiresIn: '2m' }
     }),
     MongooseModule.forFeature([{ name: Tokens.name, schema: TokensSchema }]),
     MailModule

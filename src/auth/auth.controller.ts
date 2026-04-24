@@ -25,8 +25,6 @@ export class AuthController {
 
   @Post('/signin')
   async signIn(@Body() signInDto: SignInDto) {
-
-    console.log(signInDto)
     const result = await this.authService.userSignIn(signInDto)
     return result
   }
@@ -98,6 +96,7 @@ export class AuthController {
   @Post('/refresh')
   async refresh(@Body() body) {
     const { refresh_token } = body;
+    console.log(refresh_token)
 
     return await this.authService.refresh(refresh_token)
   }

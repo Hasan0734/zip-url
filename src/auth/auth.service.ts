@@ -19,8 +19,6 @@ import { VerifyOtpDto } from './dto/verifyotp.dto';
 import { generateOTP, generatePayload, handleHash } from 'src/common/utils/auth.util';
 
 
-
-
 @Injectable()
 export class AuthService {
   constructor(private userService: UserService, private jwtService: JwtService, @InjectModel(Tokens.name) private tokenModel, private mailService: MailService) { }
@@ -62,18 +60,18 @@ export class AuthService {
 
   async userSignIn(signInDto: SignInDto) {
     const user = await this.userService.findUserByEmail(signInDto.email);
+    const checkPassword = await bcrypt.compare(signInDto.password, user.password);
+    if (!checkPassword) {
+      throw new UnauthorizedException('Authorization failed')
+    }
+
     if (!user.is_verified) {
       throw new ForbiddenException('Please verify your email')
     }
-    const checkPassword = await bcrypt.compare(signInDto.password, user.password);
-    if (!checkPassword) {
-      throw new UnauthorizedException()
-    }
-
     if (user.two_factor_enabled) {
       return await this.handleTwoFactor(user._id, user.email)
     }
-    const tokens = this.generateTokens(user)
+    const tokens = await this.generateTokens(user)
 
     return {
       message: "Login in successfully",
@@ -145,7 +143,13 @@ export class AuthService {
 
     try {
       const record = await this.tokenModel.findOne({ token: hashedToken });
-      this.validateToken(record)
+      if (!record) {
+        throw new BadRequestException('Invalid token')
+      }
+
+      if (record.expires_at < new Date()) {
+        throw new UnauthorizedException("Expired token")
+      }
 
       const salt = await bcrypt.genSalt(10)
       const hashPassword = await bcrypt.hash(resetDto.new_password, salt);
@@ -175,7 +179,13 @@ export class AuthService {
 
       const record = await this.tokenModel.findOne({ token: hashedToken, type: TokenType.EMAIL_VERIFICATION })
 
-      this.validateToken(record)
+      if (!record) {
+        throw new BadRequestException('Invalid token')
+      }
+
+      if (record.expires_at < new Date()) {
+        throw new UnauthorizedException("Expired token")
+      }
 
       const user = await this.userService.findUserById(record.user_id);
       user.is_verified = true;
@@ -228,7 +238,7 @@ export class AuthService {
     const hashed = handleHash(verifyOtpDto.otp)
     const user = await this.userService.findUserByEmail(verifyOtpDto.email);
 
-    const record = await this.tokenModel.findOne({ token: hashed, type: TokenType.OTP_VERIFICATION });
+    const record = await this.tokenModel.findOne({ token: hashed, type: TokenType.OTP_VERIFICATION, user_id: user._id });
 
 
     if (!record) {
@@ -239,7 +249,8 @@ export class AuthService {
     }
 
     await this.tokenModel.deleteOne({ _id: record._id });
-    const tokens = this.generateTokens(user)
+    const tokens = await this.generateTokens(user)
+    console.log({ tokens })
 
     return { message: "OTP verified successfully", status: 'success', ...tokens }
 
@@ -263,7 +274,15 @@ export class AuthService {
 
       const record = await this.tokenModel.findOne({ token: hashed, type: TokenType.REFRESH_TOKEN });
 
-      this.validateToken(record)
+
+      if (!record) {
+        throw new BadRequestException('Invalid token')
+      }
+
+      if (record.expires_at < new Date()) {
+        throw new UnauthorizedException("Expired token")
+      }
+
 
       const user = await this.userService.findUserById(record.user_id);
       await this.tokenModel.deleteOne({ _id: record._id }) // optional: rotate token (recommended)
@@ -351,17 +370,6 @@ export class AuthService {
     const refresh_token = await this.createToken(user._id, TokenType.REFRESH_TOKEN, refresh_token_expires)
     return {
       access_token, refresh_token
-    }
-  }
-
-  async validateToken(record: TokensDocument) {
-
-    if (!record) {
-      throw new BadRequestException('Invalid token')
-    }
-
-    if (record.expires_at < new Date()) {
-      throw new UnauthorizedException("Expired token")
     }
   }
 
