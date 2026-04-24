@@ -2,6 +2,7 @@ import {  IsEmail, IsNotEmpty, IsString, IsStrongPassword } from "class-validato
 
 export class VerifyOtpDto {
     @IsEmail()
+    @IsNotEmpty()
     email!: string;
 
     @IsString()

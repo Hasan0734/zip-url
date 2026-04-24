@@ -8,11 +8,11 @@ import {
 import { UrlsService } from './urls.service';
 import { CreateUrlDto } from './dto/create-url.dto';
 import { UpdateUrlDto } from './dto/update-url.dto';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { ClicksService } from 'src/clicks/clicks.service';
 import { CacheInterceptor } from '@nestjs/cache-manager';
-import { EmailVerifiedGuard } from 'src/auth/email-verified.guard';
-import { RequireVerified } from 'src/auth/require-verified.decorator';
+import { EmailVerifiedGuard } from 'src/auth/guard/email-verified.guard';
+import { RequireVerified } from 'src/auth/decorator/require-verified.decorator';
 
 @Controller('urls')
 export class UrlsController {

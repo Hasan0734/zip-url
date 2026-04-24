@@ -28,7 +28,7 @@ export class UserService {
     try {
       const user = await this.userModel.findOne({ email });
       if (!user) {
-        throw new NotFoundException()
+        throw new NotFoundException("Your credentials is wrong!")
       }
       return user;
     } catch (error) {
@@ -39,7 +39,7 @@ export class UserService {
     try {
       const user = await this.userModel.findOne({ _id }).select("-password");
       if (!user) {
-        throw new NotFoundException()
+        throw new NotFoundException("Your credentials is wrong!")
       }
       return user;
     } catch (error) {
@@ -52,7 +52,7 @@ export class UserService {
         returnDocument: 'after'
       }).select("-password")
       if (!user) {
-        throw new NotFoundException()
+       throw new NotFoundException("Your credentials is wrong!")
       }
       return user;
     } catch (error) {
@@ -65,7 +65,7 @@ export class UserService {
         returnDocument: 'after'
       }).select("-password")
       if (!user) {
-        throw new NotFoundException()
+       throw new NotFoundException("Your credentials is wrong!")
       }
       return user;
     } catch (error) {

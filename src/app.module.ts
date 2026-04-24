@@ -16,15 +16,15 @@ import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({isGlobal: true}),
-    MongooseModule.forRoot(process.env.DATABASE_URI as string),
+    ConfigModule.forRoot({ isGlobal: true }),
+    MongooseModule.forRoot(process.env.DATABASE_URI as string, { autoIndex: true }),
     ThrottlerModule.forRoot({
       throttlers: [
         {
           ttl: 60000,
           limit: 10,
         },
-     
+
       ],
       errorMessage: "WOW too youg too many requested!"
     }),

@@ -1,15 +1,15 @@
-import { Controller, Get, Post, Body, Request, UseGuards, Patch, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Request, UseGuards, Patch, Query, Res, ForbiddenException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/signIn-dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserService } from 'src/user/user.service';
-import { AuthGuard } from './auth.guard';
+import { AuthGuard } from './guard/auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { EmailDto } from './dto/email.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/ResetPassword.dto';
-import { EmailVerifiedGuard } from './email-verified.guard';
-import { RequireVerified } from './require-verified.decorator';
+import { EmailVerifiedGuard } from './guard/email-verified.guard';
+import { RequireVerified } from './decorator/require-verified.decorator';
 import { VerifyOtpDto } from './dto/verifyotp.dto';
 import { Throttle } from '@nestjs/throttler';
 
@@ -25,6 +25,8 @@ export class AuthController {
 
   @Post('/signin')
   async signIn(@Body() signInDto: SignInDto) {
+
+    console.log(signInDto)
     const result = await this.authService.userSignIn(signInDto)
     return result
   }
@@ -93,6 +95,18 @@ export class AuthController {
 
   }
 
+  @Post('/refresh')
+  async refresh(@Body() body) {
+    const { refresh_token } = body;
 
+    return await this.authService.refresh(refresh_token)
+  }
+
+
+  @Post('/logout')
+  async logout(@Body() body) {
+    const { refresh_token } = body;
+    return await this.authService.logout(refresh_token)
+  }
 
 }

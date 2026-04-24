@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserModule } from 'src/user/user.module';
 import { JwtModule } from '@nestjs/jwt';
-import { Tokens, TokensSchema } from 'src/user/schemas/password-reset.schema';
+import { Tokens, TokensSchema } from 'src/user/schemas/token.schema';
 import { MailModule } from 'src/mail/mail.module';
 
 @Module({
@@ -17,7 +17,7 @@ import { MailModule } from 'src/mail/mail.module';
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '3600s' }
+      signOptions: { expiresIn: '15m' }
     }),
     MongooseModule.forFeature([{ name: Tokens.name, schema: TokensSchema }]),
     MailModule

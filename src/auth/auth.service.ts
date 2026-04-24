@@ -7,16 +7,19 @@ import { JwtService } from '@nestjs/jwt';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { EmailDto } from './dto/email.dto';
-import { Role } from './role.enum';
+import { Role } from './enum/role.enum';
 import { Types } from 'mongoose';
 import crypto from 'crypto'
 import { InjectModel } from '@nestjs/mongoose';
-import { Tokens } from 'src/user/schemas/password-reset.schema';
+import { Tokens, TokensDocument } from 'src/user/schemas/token.schema';
 import { ResetPasswordDto } from './dto/ResetPassword.dto';
 import { MailService } from 'src/mail/mail.service';
-import { TokenType } from './tokentype.enum';
+import { TokenType } from './enum/tokentype.enum';
 import { VerifyOtpDto } from './dto/verifyotp.dto';
-import { generateOTP, generatePayload, handleHashOTP } from 'src/common/utils/auth.util';
+import { generateOTP, generatePayload, handleHash } from 'src/common/utils/auth.util';
+
+
+
 
 @Injectable()
 export class AuthService {
@@ -30,8 +33,9 @@ export class AuthService {
     if (!user) {
       return { message: "Registration failed", status: 'failed' };
     }
+    const expires_at = new Date(Date.now() + 60 * 60 * 1000)
 
-    const token = await this.createToken(user._id, TokenType.EMAIL_VERIFICATION)
+    const token = await this.createToken(user._id, TokenType.EMAIL_VERIFICATION, expires_at)
     const verifyUrl = `${process.env.APP_URL}/auth/verify-email?token=${token}`;
     await this.mailService.sendEmail({
       to: user.email,
@@ -67,11 +71,14 @@ export class AuthService {
     }
 
     if (user.two_factor_enabled) {
-     return  await this.handleTwoFactor(user._id, user.email)
+      return await this.handleTwoFactor(user._id, user.email)
     }
+    const tokens = this.generateTokens(user)
 
     return {
-      access_token: await this.jwtService.signAsync(generatePayload(user))
+      message: "Login in successfully",
+      status: 'success',
+      ...tokens
     };
   }
 
@@ -107,7 +114,9 @@ export class AuthService {
       const user = await this.userService.findUserByEmail(email);
       if (!user) throw new NotFoundException()
 
-      const token = await this.createToken(user._id, TokenType.RESET_PASSWORD)
+      const expires_at = new Date(Date.now() + 60 * 60 * 1000)
+
+      const token = await this.createToken(user._id, TokenType.RESET_PASSWORD, expires_at)
 
       await this.mailService.sendEmail({
         from: process.env.SECURITY_EMAIL,
@@ -123,7 +132,8 @@ export class AuthService {
       return {
         message:
           `We sent a password reset link to ${email}. Please check your inbox and follow the instructions to reset your password.`,
-        status: 'success'
+        status: 'success',
+        reset_link: `${process.env.APP_URL}/auth/reset-password?token=${token}`
       }
     } catch (error) {
       throw error
@@ -131,16 +141,15 @@ export class AuthService {
   }
 
   async resetPassword(resetDto: ResetPasswordDto) {
-    const hashedToken = crypto.createHash('sha256').update(resetDto.token).digest('hex');
+    const hashedToken = handleHash(resetDto.token);
 
     try {
-      const resetRecord = await this.tokenModel.findOne({ token: hashedToken });
-      if (!resetRecord) {
-        throw new BadRequestException('Invalid or expired token')
-      }
+      const record = await this.tokenModel.findOne({ token: hashedToken });
+      this.validateToken(record)
+
       const salt = await bcrypt.genSalt(10)
       const hashPassword = await bcrypt.hash(resetDto.new_password, salt);
-      const user = await this.userService.updatePassword(resetRecord.user_id, hashPassword);
+      const user = await this.userService.updatePassword(record.user_id, hashPassword);
 
       await this.mailService.sendEmail({
         from: process.env.SECURITY_EMAIL,
@@ -152,7 +161,7 @@ export class AuthService {
         }
       })
 
-      await this.tokenModel.deleteOne({ _id: resetRecord._id })
+      await this.tokenModel.deleteOne({ _id: record._id })
       return { message: "Password reseted", status: 'success' }
 
     } catch (error) {
@@ -166,9 +175,7 @@ export class AuthService {
 
       const record = await this.tokenModel.findOne({ token: hashedToken, type: TokenType.EMAIL_VERIFICATION })
 
-      if (!record) {
-        throw new BadRequestException('Invalid or expired token.')
-      }
+      this.validateToken(record)
 
       const user = await this.userService.findUserById(record.user_id);
       user.is_verified = true;
@@ -185,13 +192,15 @@ export class AuthService {
   async resendEmailVerification(emailDto: EmailDto) {
 
     const user = await this.userService.findUserByEmail(emailDto.email);
-    console.log(user)
+
 
     if (user.is_verified) {
       return { message: "Already verified email.", status: 'failed' }
     }
 
-    const token = await this.createToken(user._id, TokenType.EMAIL_VERIFICATION)
+    const expires_at = new Date(Date.now() + 60 * 60 * 1000)
+
+    const token = await this.createToken(user._id, TokenType.EMAIL_VERIFICATION, expires_at)
 
     const verifyUrl = `${process.env.APP_URL}/auth/verify-email?token=${token}`;
 
@@ -216,19 +225,23 @@ export class AuthService {
 
   async verifyOtp(verifyOtpDto: VerifyOtpDto) {
 
-    const hashed = handleHashOTP(verifyOtpDto.otp)
+    const hashed = handleHash(verifyOtpDto.otp)
     const user = await this.userService.findUserByEmail(verifyOtpDto.email);
 
     const record = await this.tokenModel.findOne({ token: hashed, type: TokenType.OTP_VERIFICATION });
 
+
     if (!record) {
       throw new BadRequestException('Invalid OTP')
     }
+    if (record.expires_at < new Date()) {
+      throw new UnauthorizedException("Expired OTP")
+    }
 
     await this.tokenModel.deleteOne({ _id: record._id });
-    const access_token = await this.jwtService.signAsync(generatePayload(user))
-    return { message: "OTP verified successfully", status: 'success', access_token }
+    const tokens = this.generateTokens(user)
 
+    return { message: "OTP verified successfully", status: 'success', ...tokens }
 
   }
 
@@ -242,7 +255,40 @@ export class AuthService {
     return { message: 'OTP was sent, Check your inbox.', status: 'success' };
   }
 
-  async createToken(userId: Types.ObjectId, type: TokenType) {
+  async refresh(refresh_token: string) {
+    if (!refresh_token) throw new BadRequestException("Refresh token is required!")
+
+    const hashed = handleHash(refresh_token);
+    try {
+
+      const record = await this.tokenModel.findOne({ token: hashed, type: TokenType.REFRESH_TOKEN });
+
+      this.validateToken(record)
+
+      const user = await this.userService.findUserById(record.user_id);
+      await this.tokenModel.deleteOne({ _id: record._id }) // optional: rotate token (recommended)
+      const tokens = this.generateTokens(user);
+      return tokens;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async logout(refresh_token: string) {
+    if (!refresh_token) throw new BadRequestException("Refresh token is required!")
+
+    const hashed = handleHash(refresh_token);
+
+    try {
+      await this.tokenModel.deleteOne({ token: hashed, type: TokenType.REFRESH_TOKEN });
+    } catch (error) {
+      throw error
+    }
+
+
+  }
+
+  async createToken(userId: Types.ObjectId, type: TokenType, expires_at: Date) {
     const rawToken = crypto.randomBytes(32).toString('hex');
 
     try {
@@ -252,7 +298,11 @@ export class AuthService {
         .digest('hex');
 
       await this.tokenModel.deleteMany({ user_id: userId, type: type })
-      await this.tokenModel.create({ user_id: userId, token: hashedToken, type })
+      await this.tokenModel.create({
+        user_id: userId, token: hashedToken,
+        type,
+        expires_at
+      })
 
       return rawToken;
     } catch (error) {
@@ -262,12 +312,16 @@ export class AuthService {
 
   async handleTwoFactor(userId: string, email: string) {
     const otp = generateOTP();
-    const hashed = handleHashOTP(otp);
+    const hashed = handleHash(otp);
 
     try {
 
       await this.tokenModel.deleteMany({ user_id: userId, type: TokenType.OTP_VERIFICATION })
-      await this.tokenModel.create({ user_id: userId, token: hashed, type: TokenType.OTP_VERIFICATION })
+      await this.tokenModel.create({
+        user_id: userId, token: hashed,
+        type: TokenType.OTP_VERIFICATION,
+        expires_at: new Date(Date.now() + 5 * 60 * 1000)
+      }) //5 minutes expires
       await this.mailService.sendEmail({
         to: email,
         subject: 'OTP verification code',
@@ -278,15 +332,37 @@ export class AuthService {
       })
 
       return {
+        status: 'success',
         twoFARequired: true,
-        message: "Verifiy your otp. Check your email."
+        message: `Verifiy your otp. Check your email. OTP is ${otp}. This otp testing perpus only.`
+
       }
 
     } catch (error) {
-      console.log(error)
-      throw new BadRequestException("2FA authentication enabled.")
+      throw new BadRequestException("2FA authentication required.")
     }
   }
 
+  async generateTokens(user: any) {
+    const refresh_token_expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
+
+
+    const access_token = await this.jwtService.signAsync(generatePayload(user));
+    const refresh_token = await this.createToken(user._id, TokenType.REFRESH_TOKEN, refresh_token_expires)
+    return {
+      access_token, refresh_token
+    }
+  }
+
+  async validateToken(record: TokensDocument) {
+
+    if (!record) {
+      throw new BadRequestException('Invalid token')
+    }
+
+    if (record.expires_at < new Date()) {
+      throw new UnauthorizedException("Expired token")
+    }
+  }
 
 }

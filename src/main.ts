@@ -25,6 +25,9 @@ async function bootstrap() {
   app.setViewEngine('hbs')
   app.set('trust proxy', true)
 
+  app.enableCors()
+  app.setGlobalPrefix('api')
+
 
   const config = new DocumentBuilder()
     .setTitle('Zip Url')

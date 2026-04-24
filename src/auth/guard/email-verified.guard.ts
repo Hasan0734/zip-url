@@ -1,7 +1,7 @@
 
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { REQUIRE_VERIFIED_KEY } from './require-verified.decorator';
+import { REQUIRE_VERIFIED_KEY } from '../decorator/require-verified.decorator';
 
 
 @Injectable()

@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
-import { TokenType } from "src/auth/tokentype.enum";
+import { TokenType } from "src/auth/enum/tokentype.enum";
 
 export type TokensDocument = HydratedDocument<Tokens>;
 
@@ -15,10 +15,12 @@ export class Tokens {
     @Prop({ type: Types.ObjectId, ref: 'User', required: true })
     user_id?: Types.ObjectId
 
-    @Prop({ type: Date, default: Date.now(), expires: 3600 }) //3600
+    @Prop({ type: Date, required: true })
     expires_at!: Date
 }
 
-export const TokensSchema = SchemaFactory.createForClass(Tokens)
+export const TokensSchema = SchemaFactory.createForClass(Tokens);
+
+TokensSchema.index({ expires_at: 1 }, { expireAfterSeconds: 0 })
 
 
