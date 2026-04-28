@@ -74,7 +74,7 @@ export class UrlsService {
       if (!updated) {
         throw new NotFoundException()
       }
-      return { message: "URL updated!", status: "success" };
+      return { message: "URL updated!", success: true };
     } catch (error) {
       throw error;
     }
@@ -87,7 +87,7 @@ export class UrlsService {
       if (!url) {
         throw new NotFoundException()
       }
-      return { message: "URL Deleted!", status: "success" };
+      return { message: "URL Deleted!", success: true };
     } catch (error) {
       throw error
     }

@@ -13,7 +13,7 @@ export class MailService {
         try {
             await this.mailerService.sendMail(mailDto);
 
-            return { status: 'success', message: "Mail was sent" }
+            return { success: true, message: "Mail was sent" }
         } catch (error) {
             console.log(error)
         }

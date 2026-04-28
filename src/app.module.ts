@@ -22,7 +22,7 @@ import { MailModule } from './mail/mail.module';
       throttlers: [
         {
           ttl: 60000,
-          limit: 10,
+          limit: 30,
         },
 
       ],

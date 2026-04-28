@@ -17,14 +17,15 @@ import { Throttle } from '@nestjs/throttler';
 export class AuthController {
   constructor(private readonly authService: AuthService, private userService: UserService) { }
 
-  @Post('/register')
+  @Post('/sign-up')
   async create(@Body() createAuthDto: CreateUserDto) {
     const result = await this.authService.registerUser(createAuthDto);
     return result;
   }
 
-  @Post('/signin')
+  @Post('/sign-in')
   async signIn(@Body() signInDto: SignInDto) {
+    console.log(signInDto)
     const result = await this.authService.userSignIn(signInDto)
     return result
   }
@@ -48,11 +49,12 @@ export class AuthController {
     return this.authService.changePassword(userId, passwordDto)
   }
 
-  @Get("/profile")
+  @Get("/me")
   @UseGuards(AuthGuard, EmailVerifiedGuard)
   @RequireVerified()
   async getProfile(@Request() req) {
     const userId = req.user.sub
+    console.log({userId})
     const user = await this.userService.findUserById(userId)
     return user
   }
@@ -96,15 +98,15 @@ export class AuthController {
   @Post('/refresh')
   async refresh(@Body() body) {
     const { refresh_token } = body;
-    console.log(refresh_token)
-
+    console.log({refresh_token})
     return await this.authService.refresh(refresh_token)
   }
 
 
-  @Post('/logout')
+  @Post('/sign-out')
   async logout(@Body() body) {
     const { refresh_token } = body;
+    console.log(refresh_token)
     return await this.authService.logout(refresh_token)
   }
 

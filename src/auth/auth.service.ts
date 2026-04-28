@@ -29,7 +29,7 @@ export class AuthService {
     const user = await this.userService.registerUser({ ...createUserDto, password, role: Role.User })
 
     if (!user) {
-      return { message: "Registration failed", status: 'failed' };
+      return { message: "Registration failed", success: false };
     }
     const expires_at = new Date(Date.now() + 60 * 60 * 1000)
 
@@ -54,12 +54,13 @@ export class AuthService {
       }
     })
 
-    return { message: "Registration successfully.", status: 'success' };
+    return { message: "Registration successfully.", success: true };
 
   }
 
   async userSignIn(signInDto: SignInDto) {
     const user = await this.userService.findUserByEmail(signInDto.email);
+
     const checkPassword = await bcrypt.compare(signInDto.password, user.password);
     if (!checkPassword) {
       throw new UnauthorizedException('Authorization failed')
@@ -72,11 +73,14 @@ export class AuthService {
       return await this.handleTwoFactor(user._id, user.email)
     }
     const tokens = await this.generateTokens(user)
+    const { password, __v, createdAt, updatedAt, ...rest } = user.toObject();
 
+    console.log(rest)
     return {
       message: "Login in successfully",
-      status: 'success',
-      ...tokens
+      success: true,
+      user: rest,
+      ...tokens,
     };
   }
 
@@ -103,7 +107,7 @@ export class AuthService {
       }
     })
 
-    return { message: "Password changed!", status: 'success' }
+    return { message: "Password changed!", success: true }
   }
 
   async requestPasswordReset(data: EmailDto) {
@@ -130,7 +134,7 @@ export class AuthService {
       return {
         message:
           `We sent a password reset link to ${email}. Please check your inbox and follow the instructions to reset your password.`,
-        status: 'success',
+        success: true,
         reset_link: `${process.env.APP_URL}/auth/reset-password?token=${token}`
       }
     } catch (error) {
@@ -166,7 +170,7 @@ export class AuthService {
       })
 
       await this.tokenModel.deleteOne({ _id: record._id })
-      return { message: "Password reseted", status: 'success' }
+      return { message: "Password changed", success: true }
 
     } catch (error) {
       throw error
@@ -192,7 +196,7 @@ export class AuthService {
       await user.save();
 
       await this.tokenModel.deleteOne({ _id: record._id });
-      return { message: "Email verified successfully", status: 'success' }
+      return { message: "Email verified successfully", success: true }
     } catch (error) {
       throw error;
     }
@@ -205,7 +209,7 @@ export class AuthService {
 
 
     if (user.is_verified) {
-      return { message: "Already verified email.", status: 'failed' }
+      return { message: "Already verified email.", success: false }
     }
 
     const expires_at = new Date(Date.now() + 60 * 60 * 1000)
@@ -250,9 +254,9 @@ export class AuthService {
 
     await this.tokenModel.deleteOne({ _id: record._id });
     const tokens = await this.generateTokens(user)
-    console.log({ tokens })
+    const { password, __v, createdAt, updatedAt, ...rest } = user.toObject();
 
-    return { message: "OTP verified successfully", status: 'success', ...tokens }
+    return { message: "OTP verified successfully", success: true, ...tokens, user: rest }
 
   }
 
@@ -260,23 +264,29 @@ export class AuthService {
     const user = await this.userService.findUserByEmail(emailDto.email);
 
     if (!user.two_factor_enabled) {
-      return { message: "2FA is not enabled.", status: 'failed' }
+      return { message: "2FA is not enabled.", success: true }
     }
-    await this.handleTwoFactor(user._id, user.email)
-    return { message: 'OTP was sent, Check your inbox.', status: 'success' };
+    const record = await this.tokenModel.findOne({ type: TokenType.OTP_VERIFICATION, user_id: user._id });
+
+    if (!record) {
+      return { message: 'Please try to signin and verify OTP', success: false };
+    }
+
+    return await this.handleTwoFactor(user._id, user.email)
+
   }
 
   async refresh(refresh_token: string) {
     if (!refresh_token) throw new BadRequestException("Refresh token is required!")
 
     const hashed = handleHash(refresh_token);
+
     try {
 
       const record = await this.tokenModel.findOne({ token: hashed, type: TokenType.REFRESH_TOKEN });
 
-
       if (!record) {
-        throw new BadRequestException('Invalid token')
+        throw new NotFoundException('Invalid token')
       }
 
       if (record.expires_at < new Date()) {
@@ -285,9 +295,12 @@ export class AuthService {
 
 
       const user = await this.userService.findUserById(record.user_id);
+
+      const { password, __v, createdAt, updatedAt, ...rest } = user.toObject();
+
       await this.tokenModel.deleteOne({ _id: record._id }) // optional: rotate token (recommended)
-      const tokens = this.generateTokens(user);
-      return tokens;
+      const tokens = await this.generateTokens(user);
+      return { ...tokens, user: rest };
     } catch (error) {
       throw error;
     }
@@ -351,7 +364,7 @@ export class AuthService {
       })
 
       return {
-        status: 'success',
+        success: true,
         twoFARequired: true,
         message: `Verifiy your otp. Check your email. OTP is ${otp}. This otp testing perpus only.`
 

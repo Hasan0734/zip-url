@@ -53,7 +53,7 @@ export class ClicksService {
       const error = err as { kind?: string }
 
       if (error.kind === "ObjectId") {
-        throw new NotFoundException({ message: "Invalid _id", status: 404 })
+        throw new NotFoundException({ message: "Invalid _id" })
       }
       throw error;
     }

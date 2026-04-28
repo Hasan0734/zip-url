@@ -61,26 +61,26 @@ export class UrlsController {
     if (!body?.password) {
       return res.send({
         message: 'Password is required',
-        status: 'failed'
+        success: false
       });
     }
 
     const result = await this.urlsService.findUrlByCode(short_code);
-    if (result.type !== 'OK') return res.send({ status: 'failed', message: "Something wrong!" })
+    if (result.type !== 'OK') return res.send({ success: false, message: "Something wrong!" })
     const url = result.data;
 
-    if (!url.password) throw new BadRequestException({ status: 'failed', message: 'Bad request!' });
+    if (!url.password) throw new BadRequestException({success: false, message: 'Bad request!' });
     if (url.password !== body.password) {
       return res
         .status(HttpStatus.UNAUTHORIZED)
-        .send({ status: 'failed', message: "Password wrong!" });
+        .send({ success: false, message: "Password wrong!" });
     }
 
     setImmediate(() => {
       this.clicksService.track(url, req);
     });
 
-    return res.send({ status: 'success', url: url.original_url });
+    return res.send({ success: true, url: url.original_url });
 
 
   }

@@ -6,7 +6,7 @@ export class AppService {
   getHealth() {
     return {
       message: "Server is running",
-      status: 'success'
+      success: true
     };
   }
 }
