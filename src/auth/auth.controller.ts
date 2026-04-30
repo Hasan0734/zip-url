@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Request, UseGuards, Patch, Query, Res, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Patch, Query, Res, ForbiddenException, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/signIn-dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -12,6 +12,14 @@ import { EmailVerifiedGuard } from './guard/email-verified.guard';
 import { RequireVerified } from './decorator/require-verified.decorator';
 import { VerifyOtpDto } from './dto/verifyotp.dto';
 import { Throttle } from '@nestjs/throttler';
+import { type Request, type Response } from 'express';
+
+
+
+interface CustomRequest extends Request {
+  user?: { sub: string };
+}
+
 
 @Controller('auth')
 export class AuthController {
@@ -24,9 +32,9 @@ export class AuthController {
   }
 
   @Post('/sign-in')
-  async signIn(@Body() signInDto: SignInDto) {
+  async signIn(@Body() signInDto: SignInDto, @Res({ passthrough: true }) response: Response) {
     console.log(signInDto)
-    const result = await this.authService.userSignIn(signInDto)
+    const result = await this.authService.userSignIn(signInDto, response)
     return result
   }
 
@@ -44,7 +52,7 @@ export class AuthController {
   @Patch("/change-password")
   @UseGuards(AuthGuard, EmailVerifiedGuard)
   @RequireVerified()
-  async changePassword(@Body() passwordDto: ChangePasswordDto, @Request() req) {
+  async changePassword(@Body() passwordDto: ChangePasswordDto, @Req() req) {
     const userId = req.user.sub
     return this.authService.changePassword(userId, passwordDto)
   }
@@ -52,19 +60,21 @@ export class AuthController {
   @Get("/me")
   @UseGuards(AuthGuard, EmailVerifiedGuard)
   @RequireVerified()
-  async getProfile(@Request() req) {
-    const userId = req.user.sub
-    console.log({userId})
-    const user = await this.userService.findUserById(userId)
-    return user
+  async getProfile(@Req() req: CustomRequest) {
+    console.log({ req: req.cookies });
+    const userId = req?.user?.sub
+    // console.log({ userId })
+    const user = await this.userService.findUserById(userId!)
+    return user;
   }
 
 
   @Patch('/profile')
   @UseGuards(AuthGuard, EmailVerifiedGuard)
   @RequireVerified()
-  async updateUser(@Request() req, @Body() updateUserDto: UpdateUserDto) {
-    const userId = req.user.sub;
+  async updateUser(@Req() req, @Body() updateUserDto: UpdateUserDto) {
+
+    const userId = req?.user.sub;
 
     const res = await this.authService.updateUserById(userId, updateUserDto)
     return res;
@@ -96,18 +106,18 @@ export class AuthController {
   }
 
   @Post('/refresh')
-  async refresh(@Body() body) {
-    const { refresh_token } = body;
-    console.log({refresh_token})
-    return await this.authService.refresh(refresh_token)
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) response: Response) {
+    const { refresh_token } = req.cookies;
+
+    console.log({ req: req.cookies })
+    return await this.authService.refresh(refresh_token, response)
   }
 
 
   @Post('/sign-out')
-  async logout(@Body() body) {
-    const { refresh_token } = body;
-    console.log(refresh_token)
-    return await this.authService.logout(refresh_token)
+  async logout(@Req() req: Request, @Res({ passthrough: true }) response: Response) {
+    const { refresh_token } = req.cookies;
+    return await this.authService.logout(refresh_token, response)
   }
 
 }

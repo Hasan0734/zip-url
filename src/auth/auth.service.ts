@@ -1,3 +1,4 @@
+import { Response } from 'express';
 import { UserService } from './../user/user.service';
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { SignInDto } from './dto/signIn-dto';
@@ -17,6 +18,9 @@ import { MailService } from 'src/mail/mail.service';
 import { TokenType } from './enum/tokentype.enum';
 import { VerifyOtpDto } from './dto/verifyotp.dto';
 import { generateOTP, generatePayload, handleHash } from 'src/common/utils/auth.util';
+
+const refresh_token_expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
+
 
 
 @Injectable()
@@ -58,7 +62,7 @@ export class AuthService {
 
   }
 
-  async userSignIn(signInDto: SignInDto) {
+  async userSignIn(signInDto: SignInDto, response: Response) {
     const user = await this.userService.findUserByEmail(signInDto.email);
 
     const checkPassword = await bcrypt.compare(signInDto.password, user.password);
@@ -75,12 +79,17 @@ export class AuthService {
     const tokens = await this.generateTokens(user)
     const { password, __v, createdAt, updatedAt, ...rest } = user.toObject();
 
-    console.log(rest)
+    response.cookie('refresh_token', tokens.refresh_token, {
+      secure: true,
+      httpOnly: true,
+      expires: refresh_token_expires,
+    });
+
     return {
       message: "Login in successfully",
       success: true,
       user: rest,
-      ...tokens,
+      access_token: tokens.access_token
     };
   }
 
@@ -276,7 +285,7 @@ export class AuthService {
 
   }
 
-  async refresh(refresh_token: string) {
+  async refresh(refresh_token: string, response: Response) {
     if (!refresh_token) throw new BadRequestException("Refresh token is required!")
 
     const hashed = handleHash(refresh_token);
@@ -295,24 +304,41 @@ export class AuthService {
 
 
       const user = await this.userService.findUserById(record.user_id);
-
       const { password, __v, createdAt, updatedAt, ...rest } = user.toObject();
 
       await this.tokenModel.deleteOne({ _id: record._id }) // optional: rotate token (recommended)
       const tokens = await this.generateTokens(user);
-      return { ...tokens, user: rest };
+
+      response.cookie('refresh_token', tokens.refresh_token, {
+        secure: true,
+        httpOnly: true,
+        expires: refresh_token_expires,
+      });
+
+      return { access_token: tokens.access_token, user: rest, success: true };
     } catch (error) {
+
+      console.log(error)
       throw error;
     }
   }
 
-  async logout(refresh_token: string) {
+  async logout(refresh_token: string, res: Response) {
     if (!refresh_token) throw new BadRequestException("Refresh token is required!")
 
     const hashed = handleHash(refresh_token);
 
     try {
       await this.tokenModel.deleteOne({ token: hashed, type: TokenType.REFRESH_TOKEN });
+
+      res.clearCookie('refresh_token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        path: '/', // Ensure this matches the path used when the cookie was set
+      });
+
+      return { success: true, message: "User sign out successfully" }
     } catch (error) {
       throw error
     }
@@ -376,7 +402,6 @@ export class AuthService {
   }
 
   async generateTokens(user: any) {
-    const refresh_token_expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
 
 
     const access_token = await this.jwtService.signAsync(generatePayload(user));

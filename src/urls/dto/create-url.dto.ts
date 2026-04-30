@@ -3,7 +3,7 @@ import { IsDate, IsOptional, IsString, IsUrl, Length, Matches, MaxLength, MinLen
 
 export class CreateUrlDto {
     @IsUrl()
-    original_url: string;
+    original_url!: string;
 
     @IsOptional()
     @MinLength(6, { message: "Alias is too short!" })
@@ -11,17 +11,17 @@ export class CreateUrlDto {
     @Matches(/^\S*$/, {
         message: "Alias should not contain spaces!"
     })
-    custom_alias: string;
+    custom_alias!: string;
 
     @IsOptional()
     @MinLength(4, { message: "Password is too short!" })
     @MaxLength(20, { message: "Password is too big!" })
     @IsString()
-    password: string;
+    password!: string;
 
     @IsOptional()
     @IsDate()
     @Type(() => Date)
-    expires_at: Date;
+    expires_at!: Date;
 
 }

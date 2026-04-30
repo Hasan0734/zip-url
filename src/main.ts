@@ -4,6 +4,7 @@ import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { join } from 'node:path';
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -25,8 +26,13 @@ async function bootstrap() {
   app.setViewEngine('hbs')
   app.set('trust proxy', true)
 
-  app.enableCors()
+  app.enableCors({
+     origin: "http://localhost:5173",
+     credentials: true,
+  })
   app.setGlobalPrefix('api')
+  app.use(cookieParser())
+
 
 
   const config = new DocumentBuilder()

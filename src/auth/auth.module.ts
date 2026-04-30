@@ -17,7 +17,7 @@ import { MailModule } from 'src/mail/mail.module';
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '60s' }
+      signOptions: { expiresIn: '15m' }
     }),
     MongooseModule.forFeature([{ name: Tokens.name, schema: TokensSchema }]),
     MailModule
@@ -25,3 +25,11 @@ import { MailModule } from 'src/mail/mail.module';
   ],
 })
 export class AuthModule { }
+
+
+
+// const expires = new Date();
+// expires.setMilliseconds(
+//   expires.getMilliseconds() +
+//   ms(this.configService.getOrThrow<string>('JWT_EXPIRATION')),
+// );
