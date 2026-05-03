@@ -13,6 +13,7 @@ import { ClicksService } from 'src/clicks/clicks.service';
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { EmailVerifiedGuard } from 'src/auth/guard/email-verified.guard';
 import { RequireVerified } from 'src/auth/decorator/require-verified.decorator';
+import { CustomAliasDto } from './dto/custom-alias.dto';
 
 @Controller('urls')
 export class UrlsController {
@@ -83,5 +84,11 @@ export class UrlsController {
     return res.send({ success: true, url: url.original_url });
 
 
+  }
+
+  @Post("/check/custom-alias")
+  async customAliasAvailable(@Body() customAliasDto: CustomAliasDto){
+
+    return await this.urlsService.customAliasAvailable(customAliasDto)
   }
 }

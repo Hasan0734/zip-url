@@ -16,6 +16,7 @@ export class RedirctController {
         @Param('short_code') short_code: string, @Res() res, @Req() req) {
         const result = await this.urlsService.findUrlByCode(short_code);
 
+
         switch (result.type) {
             case 'NOT_FOUND':
                 return res.render('not_found.hbs');

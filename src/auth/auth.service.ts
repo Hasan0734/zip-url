@@ -80,9 +80,12 @@ export class AuthService {
     const { password, __v, createdAt, updatedAt, ...rest } = user.toObject();
 
     response.cookie('refresh_token', tokens.refresh_token, {
-      secure: true,
       httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      path: '/',
       expires: refresh_token_expires,
+
     });
 
     return {
@@ -312,13 +315,15 @@ export class AuthService {
       response.cookie('refresh_token', tokens.refresh_token, {
         secure: true,
         httpOnly: true,
+        sameSite: 'strict',
+        path: '/',
         expires: refresh_token_expires,
+
       });
 
       return { access_token: tokens.access_token, user: rest, success: true };
     } catch (error) {
 
-      console.log(error)
       throw error;
     }
   }
@@ -335,7 +340,7 @@ export class AuthService {
         httpOnly: true,
         secure: true,
         sameSite: 'strict',
-        path: '/', // Ensure this matches the path used when the cookie was set
+        path: '/',
       });
 
       return { success: true, message: "User sign out successfully" }

@@ -13,18 +13,18 @@ export class UpdateUrlDto {
     @Matches(/^\S*$/, {
         message: "Alias should not contain spaces!"
     })
-    custom_alias: string;
+    custom_alias!: string;
 
     @IsOptional()
     @Length(4, 10)
-    password: string;
+    password!: string;
 
     @IsOptional()
     @IsDate()
     @Type(() => Date)
-    expires_at: Date;
+    expires_at!: Date;
 
     @IsOptional()
     @IsBoolean()
-    is_active: boolean;
+    is_active!: boolean;
 }

@@ -6,6 +6,7 @@ import { Url } from './schemas/url.schema';
 import { nanoid } from 'nanoid';
 
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
+import { CustomAliasDto } from './dto/custom-alias.dto';
 
 
 @Injectable()
@@ -17,7 +18,11 @@ export class UrlsService {
     const short_code = nanoid(8)
     try {
       const res = await this.urlModel.create({ ...createUrlDto, short_code, owner_id });
-      return res;
+      return {
+        success: true,
+        message: "Added new url successfully",
+        url: res
+      };
     } catch (err: unknown) {
       const error = err as { code?: number, keyValue: string[] }
       const keys = Object.keys(error.keyValue)
@@ -49,6 +54,7 @@ export class UrlsService {
       const data = await this.cache.get(shortCodeKey);
       if (data) return { type: 'OK', data };
       const url = await this.urlModel.findOne({ $or: [{ short_code }, { custom_alias: short_code }] });
+    
       if (!url) {
         return { type: 'NOT_FOUND' };
       }
@@ -98,6 +104,30 @@ export class UrlsService {
       await this.urlModel.updateOne({ _id }, { $inc: { click_count: 1 } })
     } catch (error) {
       throw error;
+    }
+  }
+
+  async customAliasAvailable(customAliasDto: CustomAliasDto) {
+    try {
+      const custom_alias = customAliasDto.custom_alias
+
+      const res = await this.urlModel.findOne({ custom_alias });
+
+      console.log(res)
+      if (!res) {
+        return {
+          message: "Alias is vailable",
+          success: true,
+        }
+      }
+
+      return {
+        message: "Alias is not available",
+        success: false
+      }
+
+    } catch (error) {
+
     }
   }
 }

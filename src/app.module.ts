@@ -26,7 +26,7 @@ import { MailModule } from './mail/mail.module';
         },
 
       ],
-      errorMessage: "WOW too youg too many requested!"
+      errorMessage: "Too many requested!"
     }),
     CacheModule.register({
       isGlobal: true,
