@@ -5,13 +5,13 @@ export type UrlDocument = HydratedDocument<Url>;
 
 @Schema({ timestamps: true })
 export class Url {
-    @Prop({ required: true, })
+    @Prop({ required: true, trim: true })
     original_url!: string;
 
-    @Prop({ unique: true, sparse: true, default: undefined })
+    @Prop({ unique: true, sparse: true, default: undefined, trim: true })
     custom_alias!: string;
 
-    @Prop({ default: undefined })
+    @Prop({ default: undefined, trim: true })
     password!: string;
 
     @Prop({ required: false, default: undefined })
@@ -20,7 +20,7 @@ export class Url {
     @Prop({ required: true, default: true })
     is_active!: boolean;
 
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true, unique: true, trim: true })
     short_code!: string;
 
     @Prop({ default: 0 })

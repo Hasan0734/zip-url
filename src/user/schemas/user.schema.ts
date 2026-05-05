@@ -6,22 +6,22 @@ export type UserDocument = HydratedDocument<User>;
 
 @Schema({ timestamps: true })
 export class User {
-    @Prop({ required: true })
+    @Prop({ required: true, trim: true })
     first_name!: string;
 
-    @Prop({ required: true })
+    @Prop({ required: true, trim: true })
     last_name!: string;
 
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true, unique: true, trim: true, lowercase: true })
     email!: string;
 
-    @Prop({ required: true })
+    @Prop({ required: true, trim: true})
     password!: string;
 
-    @Prop({default: false})
+    @Prop({ default: false })
     is_verified!: boolean
 
-    @Prop({default: false})
+    @Prop({ default: false })
     two_factor_enabled!: boolean
 
     @Prop({ default: Role.User })

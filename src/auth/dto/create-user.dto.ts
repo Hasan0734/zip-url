@@ -4,13 +4,13 @@ import { Match } from "src/decorators/match.decorator";
 
 export class CreateUserDto {
     @MinLength(2, { message: "First name is too short!" })
-    @MaxLength(20, { message: "Frist name is too big!" })
+    @MaxLength(50, { message: "Frist name is too big!" })
     @IsString()
     @IsNotEmpty()
     first_name!: string;
 
-    @MaxLength(20, { message: "Last name is too big!" })
     @MinLength(2, { message: "Last name is too short!" })
+    @MaxLength(50, { message: "Last name is too big!" })
     @IsString()
     @IsNotEmpty()
     last_name!: string;

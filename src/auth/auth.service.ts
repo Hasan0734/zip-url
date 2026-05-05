@@ -58,7 +58,7 @@ export class AuthService {
       }
     })
 
-    return { message: "Registration successfully.", success: true };
+    return { message: "Registration successfully. We sent email for the verification. Check inbox or spam.", success: true };
 
   }
 
@@ -244,7 +244,8 @@ export class AuthService {
 
     return {
       message: "Verification link sent your email. Check your email inbox or spam forlder.",
-      token: token
+      token: token,
+      success: true
     }
 
   }
