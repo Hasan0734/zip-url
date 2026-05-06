@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import hbs from 'hbs';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -36,16 +35,9 @@ async function bootstrap() {
     origin: "http://localhost:5173",
     credentials: true,
   })
-  app.setGlobalPrefix('api', {
-    exclude: [
-      { path: 'health', method: RequestMethod.GET },
-      { path: ':short_code', method: RequestMethod.GET }
-    ]
-  })
+  app.setGlobalPrefix('api')
+
   app.use(cookieParser())
-
-
-
   const config = new DocumentBuilder()
     .setTitle('Zip Url')
     .setDescription('The Zip Url API description')

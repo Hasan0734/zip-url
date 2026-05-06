@@ -9,7 +9,7 @@ import { UrlsModule } from './urls/urls.module';
 import { ClicksModule } from './clicks/clicks.module';
 import { RedirectModule } from './redirect/redirect.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, RouterModule } from '@nestjs/core';
 import { CacheModule } from '@nestjs/cache-manager';
 import { createKeyv } from '@keyv/redis';
 import { MailModule } from './mail/mail.module';
@@ -32,13 +32,12 @@ import { MailModule } from './mail/mail.module';
       isGlobal: true,
       stores: [createKeyv(process.env.REDIS_STORE)]
     }),
-
     AuthModule,
+    UrlsModule,
     UserModule,
     ClicksModule,
-    UrlsModule,
-    RedirectModule,
     MailModule,
+    RedirectModule,
   ],
   controllers: [AppController],
   providers: [AppService, {

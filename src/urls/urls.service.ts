@@ -4,10 +4,14 @@ import { UpdateUrlDto } from './dto/update-url.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Url } from './schemas/url.schema';
 import { nanoid } from 'nanoid';
-
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CustomAliasDto } from './dto/custom-alias.dto';
 
+
+type QueryTypes = {
+  limit?: number;
+  sort: string
+}
 
 @Injectable()
 export class UrlsService {
@@ -35,16 +39,29 @@ export class UrlsService {
     }
   }
 
-  async findAll(owner_id: string) {
+
+  async findAll(owner_id: string, query: QueryTypes,) {
+    const limit = query.limit || 10;
+    const sort = query.sort
     try {
-      const urls = await this.urlModel.find({ owner_id }).exec();
-      return urls;
+      const query = this.urlModel.find({ owner_id }).limit(limit);
+      const total = await this.urlModel.find({ owner_id }).countDocuments();
+
+      if (sort) {
+        query.sort({ createdAt: sort })
+      }
+
+      const urls = await query.exec()
+      return {
+        urls,
+        total
+      };
     } catch (error) {
       throw error;
     }
   }
 
-  findOne(id: number) {
+  async findOne(id: number) {
     return `This action returns a #${id} url`;
   }
 
@@ -54,7 +71,7 @@ export class UrlsService {
       const data = await this.cache.get(shortCodeKey);
       if (data) return { type: 'OK', data };
       const url = await this.urlModel.findOne({ $or: [{ short_code }, { custom_alias: short_code }] });
-    
+
       if (!url) {
         return { type: 'NOT_FOUND' };
       }

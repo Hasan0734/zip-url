@@ -3,14 +3,14 @@ import {
   Request, UseGuards, Res, Req,
   BadRequestException,
   HttpStatus,
-  UseInterceptors
+  UseInterceptors,
+  Query
 } from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { CreateUrlDto } from './dto/create-url.dto';
 import { UpdateUrlDto } from './dto/update-url.dto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { ClicksService } from 'src/clicks/clicks.service';
-import { CacheInterceptor } from '@nestjs/cache-manager';
 import { EmailVerifiedGuard } from 'src/auth/guard/email-verified.guard';
 import { RequireVerified } from 'src/auth/decorator/require-verified.decorator';
 import { CustomAliasDto } from './dto/custom-alias.dto';
@@ -30,15 +30,14 @@ export class UrlsController {
 
   @Get()
   @UseGuards(AuthGuard)
-  async findAll(@Request() req) {
+  async findAll(@Request() req, @Query() queris) {    
     const userId = req.user.sub
-    return await this.urlsService.findAll(userId);
+    return await this.urlsService.findAll(userId, queris);
   }
 
   @Get(':id')
   @UseGuards(AuthGuard)
   async findOne(@Param('id') id: string) {
-
     return await this.urlsService.findOne(+id);
   }
 
@@ -53,7 +52,6 @@ export class UrlsController {
   remove(@Param('id') id: string) {
     return this.urlsService.remove(id);
   }
-
 
   @Post('/verify/:short_code')
   // @UseInterceptors(CacheInterceptor)
@@ -88,7 +86,7 @@ export class UrlsController {
 
   @Post("/check/custom-alias")
   async customAliasAvailable(@Body() customAliasDto: CustomAliasDto){
-
     return await this.urlsService.customAliasAvailable(customAliasDto)
   }
+
 }

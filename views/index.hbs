@@ -54,7 +54,7 @@
       submitBtn.textContent = "Verifying...";
 
       try {
-        const res = await fetch(`/urls/verify/${short_code}`, {
+        const res = await fetch(`/api/urls/verify/${short_code}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

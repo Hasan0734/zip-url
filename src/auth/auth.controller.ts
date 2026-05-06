@@ -38,6 +38,7 @@ export class AuthController {
     return result
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post("/request-password-reset")
   async requestPasswordRequest(@Body() data: EmailDto) {
 
@@ -61,11 +62,8 @@ export class AuthController {
   @UseGuards(AuthGuard, EmailVerifiedGuard)
   @RequireVerified()
   async getProfile(@Req() req: CustomRequest) {
-    console.log({ req: req.cookies });
     const userId = req?.user?.sub
-    // console.log({ userId })
-    const user = await this.userService.findUserById(userId!)
-    return user;
+    return await this.userService.findUserById(userId!)
   }
 
 
@@ -73,25 +71,22 @@ export class AuthController {
   @UseGuards(AuthGuard, EmailVerifiedGuard)
   @RequireVerified()
   async updateUser(@Req() req, @Body() updateUserDto: UpdateUserDto) {
-
     const userId = req?.user.sub;
 
-    const res = await this.authService.updateUserById(userId, updateUserDto)
-    return res;
+    return await this.authService.updateUserById(userId, updateUserDto);
   }
 
 
   @Get('/verify-email')
   async VerifyEmail(@Query('token') token: string) {
     return await this.authService.verifyEmail(token)
-
   }
 
   @Post('/resend-verification')
   async resendEmailVerification(@Body() email: EmailDto) {
     return await this.authService.resendEmailVerification(email)
   }
-
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('/verify-otp')
   async verifiyOtp(@Body() otpDto: VerifyOtpDto) {
     return await this.authService.verifyOtp(otpDto)
@@ -108,8 +103,6 @@ export class AuthController {
   @Post('/refresh')
   async refresh(@Req() req: Request, @Res({ passthrough: true }) response: Response) {
     const { refresh_token } = req.cookies;
-
-    console.log({ req: req.cookies })
     return await this.authService.refresh(refresh_token, response)
   }
 
