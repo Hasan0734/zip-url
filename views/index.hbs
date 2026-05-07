@@ -4,89 +4,104 @@
 <head>
   <title>Password required.</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-  <script src="https://cdn.tailwindcss.com"></script>
+
+  {{!--
+  <script src="https://cdn.tailwindcss.com"></script> --}}
+  <link href="/css/style.css" rel="stylesheet">
 
 </head>
 
-<body class="bg-gray-900  flex items-center justify-center h-screen">
-  <div class="w-[300px] sm:w-[400px] bg-gray-800 rounded-lg p-5 border border-gray-700 shadow-md">
-    <div>
-      <h2 class="text-base/7 font-semibold text-white">ZIP Url</h2>
-      <p class="mt-1 text-sm/6 text-gray-400">This link is password protected! If you don't know, contact the url owner.
-      </p>
+<body class="bg-background selection:bg-primary/30 selection:text-primary scroll-smooth">
+  <div class="relative flex w-full min-h-screen items-center justify-center overflow-hidden py-10">
+
+
+    <div class="fixed inset-0 z-0">
+      <div class="absolute top-[-10%] left-[-10%] h-[50%] w-[50%] rounded-full bg-primary/10 blur-[120px]"></div>
+      <div class="absolute right-[-10%] bottom-[-10%] h-[40%] w-[40%] rounded-full bg-primary/5 blur-[100px]"></div>
+      <div class="absolute top-1/2 left-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 opacity-20" style="
+        background-image: radial-gradient(#69f6b8 0.5px, transparent 0.5px); background-size:32px 32px;"></div>
     </div>
-    <form id="passwordForm" class="mt-10">
+
+    <div class="glass-card emerald-glow w-full max-w-122 rounded-[2rem] bg-background! p-10 md:p-12">
       <div>
-        <label for="password" class="block text-sm/6 font-medium text-white">Enter Password</label>
-        <div class="mt-1 w-full">
-          <input id="password" type="password" name="password" placeholder="• • • • • •"
-            class="block w-full rounded-md bg-gray-900/70 px-3 py-1.5 text-white outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm/6 " />
-        </div>
-        <div id="message">
-          <p class="text-red-500">{{error}}</p>
-        </div>
+        <h2 class="text-base/7 font-semibold text-white">ZIP Url</h2>
+        <p class="mt-1 text-sm/6 text-gray-400">This link is password protected! If you don't know, contact the url
+          owner.
+        </p>
       </div>
-      <button id="submitBtn" type="submit"
-        class="mt-2 rounded-md bg-gray-600 px-3 py-1.5 text-sm font-medium text-white shadow-xs hover:bg-indigo-500 outline-none focus:ring-1 focus:ring-indigo-500">Submit</button>
-    </form>
-  </div>
+      <form id="passwordForm" class="mt-10">
+        <div>
+          <label for="password" class="block text-sm/6 font-medium text-white">Enter Password</label>
+          <div class="mt-1 w-full">
+            <input id="password" type="password" name="password" placeholder="• • • • • •"
+              class="block w-full rounded-md bg-gray-900/70 px-3 py-1.5 text-white outline-none focus:ring-1 focus:ring-primary sm:text-sm/6 " />
+          </div>
+          <div id="message" class="mt-1 text-sm">
+            <p class="text-red-500  ">{{error}}</p>
+          </div>
+        </div>
+        <button id="submitBtn" type="submit"
+          class="mt-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white shadow-xs hover:bg-primary/80 outline-none focus:ring-1 focus:ring-primary/80">Submit</button>
+      </form>
+    </div>
 
-  <script>
-    const passwordForm = document.getElementById("passwordForm");
-    const input = document.getElementById("password");
-    const messageBox = document.getElementById("message");
-    const submitBtn = document.getElementById("submitBtn");
 
-    const short_code = window.location.pathname.split('/').filter(Boolean).pop();
+    <script>
+      const passwordForm = document.getElementById("passwordForm");
+      const input = document.getElementById("password");
+      const messageBox = document.getElementById("message");
+      const submitBtn = document.getElementById("submitBtn");
 
-    passwordForm.addEventListener('submit', submitPassword)
+      const short_code = window.location.pathname.split('/').filter(Boolean).pop();
 
-    async function submitPassword(e) {
-      e.preventDefault();
-      const password = input.value;
+      passwordForm.addEventListener('submit', submitPassword)
 
-      messageBox.innerHTML = "";
-      if (!password) {
-        showMessage("Password is required!", "text-red-500");
-        return;
-      }
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Verifying...";
+      async function submitPassword(e) {
+        e.preventDefault();
+        const password = input.value;
 
-      try {
-        const res = await fetch(`/api/urls/verify/${short_code}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ password })
-        })
-        const json = await res.json();
-        if (!json.success) {
-          showMessage(json.message || "Invalid password", "text-red-500");
+        messageBox.innerHTML = "";
+        if (!password) {
+          showMessage("Password is required!", "text-red-500");
           return;
         }
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Verifying...";
 
-        showMessage("Redirecting...", "text-green-500");
-        window.location.replace(json.url);
-        return;
-      } catch (err) {
-        showMessage("Network error. Please try again.", "text-red-500");
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Submit";
+        try {
+          const res = await fetch(`/api/urls/verify/${short_code}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ password })
+          })
+          const json = await res.json();
+          if (!json.success) {
+            showMessage(json.message || "Invalid password", "text-red-500");
+            return;
+          }
+
+          showMessage("Redirecting...", "text-green-500");
+          window.location.replace(json.url);
+          return;
+        } catch (err) {
+          showMessage("Network error. Please try again.", "text-red-500");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Submit";
+        }
+
+
+      }
+      function showMessage(text, colorClass) {
+        const p = document.createElement("p");
+        p.textContent = text;
+        p.className = `${colorClass}`;
+        messageBox.appendChild(p);
       }
 
-
-    }
-    function showMessage(text, colorClass) {
-      const p = document.createElement("p");
-      p.textContent = text;
-      p.className = `${colorClass} text-xs font-medium`;
-      messageBox.appendChild(p);
-    }
-
-  </script>
+    </script>
 </body>
 
 </html>

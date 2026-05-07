@@ -76,7 +76,7 @@ export class UrlsService {
         return { type: 'NOT_FOUND' };
       }
       await this.cache.set(shortCodeKey, url, 3600000) // 3600000 1hours cache
-      if (!url.is_active) {
+      if (url.is_active) {
         return { type: 'DISABLED' };
       }
       if (url.expires_at && url.expires_at < new Date()) {

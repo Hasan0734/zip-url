@@ -4,36 +4,46 @@
 <head>
     <title>Disabled url</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/css/style.css" rel="stylesheet">
 </head>
 
-<body class="bg-gray-900 flex items-center justify-center h-screen">
-    <div class="max-w-md w-full bg-gray-800 p-8 rounded-2xl shadow-xl text-center">
+<body class="bg-background selection:bg-primary/30 selection:text-primary scroll-smooth">
+    <div class="relative flex w-full min-h-screen items-center justify-center overflow-hidden py-10">
 
-        <div class="inline-flex items-center justify-center w-16 h-16  bg-indigo-600/20 rounded-full mb-6">
-            <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-            </svg>
+
+        <div class="fixed inset-0 z-0">
+            <div class="absolute top-[-10%] left-[-10%] h-[50%] w-[50%] rounded-full bg-primary/10 blur-[120px]"></div>
+            <div class="absolute right-[-10%] bottom-[-10%] h-[40%] w-[40%] rounded-full bg-primary/5 blur-[100px]">
+            </div>
+            <div class="absolute top-1/2 left-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 opacity-20" style="
+        background-image: radial-gradient(#69f6b8 0.5px, transparent 0.5px); background-size:32px 32px;"></div>
         </div>
 
-        <h1 class="text-3xl font-extrabold text-white mb-3">URL Disabled</h1>
-        <p class="text-slate-500 mb-10 leading-relaxed">
-            The administrator has disabled this public link. If you believe this is a mistake, please contact owner.
-        </p>
+        <div class="glass-card emerald-glow w-full max-w-122 rounded-[2rem] bg-background! p-10 md:p-12 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16  bg-red-600/20 rounded-full mb-6">
+                <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+            </div>
 
-        <div class="flex flex-col gap-4">
-            <a href=""
-                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition duration-200">
-                Contact Owner
-            </a>
-            <a href="/" class="block text-sm text-gray-500 hover:text-gray-800 transition">
-                Go Back
-            </a>
+            <h1 class="text-3xl font-extrabold text-white mb-3">URL Disabled</h1>
+            <p class="text-muted-foreground mb-10 leading-relaxed">
+                The administrator has disabled this public link. If you believe this is a mistake, please contact owner.
+            </p>
+
+            <div class="flex flex-col gap-4">
+                <a href=""
+                    class="w-full bg-primary hover:bg-primary/80 text-white font-semibold py-3 rounded-lg transition duration-200">
+                    Contact Owner
+                </a>
+                <a href="/" class="block text-sm text-muted-foreground hover:text-foreground transition">
+                    Go Back
+                </a>
+            </div>
         </div>
-
-    </div>
 
 </body>
+
 
 </html>
