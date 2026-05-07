@@ -32,10 +32,22 @@ import { MailModule } from './mail/mail.module';
       isGlobal: true,
       stores: [createKeyv(process.env.REDIS_STORE)]
     }),
+
     AuthModule,
-    UrlsModule,
+
+    RouterModule.register([
+      {
+        path: 'api',
+        children: [
+          AuthModule,
+          UrlsModule,
+          ClicksModule,
+        ]
+      }
+    ]),
+
+
     UserModule,
-    ClicksModule,
     MailModule,
     RedirectModule,
   ],

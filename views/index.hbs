@@ -62,13 +62,14 @@
           body: JSON.stringify({ password })
         })
         const json = await res.json();
-        if (json.status === 'failed') {
+        if (!json.success) {
           showMessage(json.message || "Invalid password", "text-red-500");
-
-        } else if (json.status === "success") {
-          showMessage("Redirecting...", "text-green-500");
-          window.location.replace(json.url);
+          return;
         }
+
+        showMessage("Redirecting...", "text-green-500");
+        window.location.replace(json.url);
+        return;
       } catch (err) {
         showMessage("Network error. Please try again.", "text-red-500");
       } finally {

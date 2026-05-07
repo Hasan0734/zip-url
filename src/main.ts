@@ -32,10 +32,10 @@ async function bootstrap() {
   app.set('trust proxy', true)
 
   app.enableCors({
-    origin: "http://localhost:5173",
+    origin: process.env.ORIGIN_URL,
     credentials: true,
   })
-  app.setGlobalPrefix('api')
+  // app.setGlobalPrefix('api')
 
   app.use(cookieParser())
   const config = new DocumentBuilder()
