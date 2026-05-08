@@ -14,6 +14,7 @@ import { ClicksService } from 'src/clicks/clicks.service';
 import { EmailVerifiedGuard } from 'src/auth/guard/email-verified.guard';
 import { RequireVerified } from 'src/auth/decorator/require-verified.decorator';
 import { CustomAliasDto } from './dto/custom-alias.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('urls')
 export class UrlsController {
@@ -28,6 +29,7 @@ export class UrlsController {
     return await this.urlsService.create(createUrlDto, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Get()
   @UseGuards(AuthGuard)
   async findAll(@Request() req, @Query() queries) {
@@ -37,6 +39,7 @@ export class UrlsController {
     let filters = { ...req.query };
     const excludeFields = ["sort", "page", "limit", "fields", "owner_id", "search"];
     excludeFields.forEach((field) => delete filters[field]);
+
     if (queries?.is_active) {
       filters.is_active = JSON.parse(queries.is_active)
     }
@@ -55,7 +58,7 @@ export class UrlsController {
     }
 
 
-    const newQueries:any = {
+    const newQueries: any = {
       limit: 20,
       skip: 0
     }
@@ -69,11 +72,17 @@ export class UrlsController {
       newQueries.fields = fields;
     }
     if (queries.page) {
-      const { page = 1, limit = 10 } = queries;
+
+      const page = queries.page === '0' ? 1 : queries.page;
+      const { limit = 10 } = queries;
 
       const skip = (page - 1) * parseInt(limit);
       newQueries.skip = skip;
       newQueries.limit = limit
+    }
+
+    if(queries.limit) {
+      newQueries.limit = queries.limit
     }
 
 
