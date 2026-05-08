@@ -30,9 +30,34 @@ export class UrlsController {
 
   @Get()
   @UseGuards(AuthGuard)
-  async findAll(@Request() req, @Query() queris) {    
+  async findAll(@Request() req, @Query() queries) {
     const userId = req.user.sub
-    return await this.urlsService.findAll(userId, queris);
+
+    const newQueries = {
+      sortBy: '',
+      limit: 20,
+      fields: '',
+      skip: 0
+    }
+
+    if (queries.sort) {
+      const sortBy = queries.sort.split(',').join(' ');
+      newQueries.sortBy = sortBy;
+    }
+    if (queries.fields) {
+      const fields = queries.fields.split(',').join(' ');
+      newQueries.fields = fields;
+    }
+    if (queries.page) {
+      const { page = 1, limit = 10 } = queries;
+
+      const skip = (page - 1) * parseInt(limit);
+      newQueries.skip = skip;
+      newQueries.limit = limit
+    }
+
+
+    return await this.urlsService.findAll(userId, newQueries);
   }
 
   @Get(':id')
@@ -68,7 +93,7 @@ export class UrlsController {
     if (result.type !== 'OK') return res.send({ success: false, message: "Something wrong!" })
     const url = result.data;
 
-    if (!url.password) throw new BadRequestException({success: false, message: 'Bad request!' });
+    if (!url.password) throw new BadRequestException({ success: false, message: 'Bad request!' });
     if (url.password !== body.password) {
       return res
         .status(HttpStatus.UNAUTHORIZED)
@@ -85,7 +110,7 @@ export class UrlsController {
   }
 
   @Post("/check/custom-alias")
-  async customAliasAvailable(@Body() customAliasDto: CustomAliasDto){
+  async customAliasAvailable(@Body() customAliasDto: CustomAliasDto) {
     return await this.urlsService.customAliasAvailable(customAliasDto)
   }
 

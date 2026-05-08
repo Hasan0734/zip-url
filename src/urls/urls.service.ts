@@ -9,8 +9,10 @@ import { CustomAliasDto } from './dto/custom-alias.dto';
 
 
 type QueryTypes = {
-  limit?: number;
-  sort: string
+  limit: number;
+  sortBy: string;
+  fields: string;
+  skip: number;
 }
 
 @Injectable()
@@ -40,21 +42,28 @@ export class UrlsService {
   }
 
 
-  async findAll(owner_id: string, query: QueryTypes,) {
-    const limit = query.limit || 10;
-    const sort = query.sort
+  async findAll(owner_id: string, queries: QueryTypes) {
+
+    console.log(queries)
     try {
-      const query = this.urlModel.find({ owner_id }).limit(limit);
+      const query = await this.urlModel.find({ owner_id })
+        .skip(queries.skip)
+        .limit(queries.limit)
+        .select(queries.fields)
+        .sort(queries.sortBy);
+
       const total = await this.urlModel.find({ owner_id }).countDocuments();
+      const page = Math.ceil(total / queries.limit)
 
-      if (sort) {
-        query.sort({ createdAt: sort })
-      }
+      // if (query.sort) {
+      //   query.sort({ createdAt: queries.sort })
+      // }
 
-      const urls = await query.exec()
+      // const urls = await query.exec()
       return {
-        urls,
-        total
+        urls: query,
+        total,
+        page
       };
     } catch (error) {
       throw error;

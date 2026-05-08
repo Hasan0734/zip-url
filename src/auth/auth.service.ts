@@ -82,7 +82,6 @@ export class AuthService {
     response.cookie('refresh_token', tokens.refresh_token, {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict',
       path: '/',
       expires: refresh_token_expires,
 
@@ -316,7 +315,6 @@ export class AuthService {
       response.cookie('refresh_token', tokens.refresh_token, {
         secure: true,
         httpOnly: true,
-        sameSite: 'strict',
         path: '/',
         expires: refresh_token_expires,
 
