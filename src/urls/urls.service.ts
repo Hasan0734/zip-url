@@ -42,26 +42,20 @@ export class UrlsService {
   }
 
 
-  async findAll(owner_id: string, queries: QueryTypes) {
+  async findAll(filters: any, queries: QueryTypes) {
 
-    console.log(queries)
     try {
-      const query = await this.urlModel.find({ owner_id })
+      const urls = await this.urlModel.find(filters )
         .skip(queries.skip)
         .limit(queries.limit)
         .select(queries.fields)
         .sort(queries.sortBy);
 
-      const total = await this.urlModel.find({ owner_id }).countDocuments();
+      const total = await this.urlModel.find( filters ).countDocuments();
       const page = Math.ceil(total / queries.limit)
 
-      // if (query.sort) {
-      //   query.sort({ createdAt: queries.sort })
-      // }
-
-      // const urls = await query.exec()
       return {
-        urls: query,
+        urls,
         total,
         page
       };

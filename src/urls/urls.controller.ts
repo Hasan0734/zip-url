@@ -31,12 +31,32 @@ export class UrlsController {
   @Get()
   @UseGuards(AuthGuard)
   async findAll(@Request() req, @Query() queries) {
-    const userId = req.user.sub
 
-    const newQueries = {
-      sortBy: '',
+    const owner_id = req.user.sub
+
+    let filters = { ...req.query };
+    const excludeFields = ["sort", "page", "limit", "fields", "owner_id", "search"];
+    excludeFields.forEach((field) => delete filters[field]);
+    if (queries?.is_active) {
+      filters.is_active = JSON.parse(queries.is_active)
+    }
+
+    if (queries?.search) {
+      const searchRegex = new RegExp(queries.search, 'i');
+
+      filters = {
+        ...filters,
+        $or: [
+          { original_url: { $regex: searchRegex } },
+          { short_code: { $regex: searchRegex } },
+          { custom_alias: { $regex: searchRegex } }
+        ]
+      }
+    }
+
+
+    const newQueries:any = {
       limit: 20,
-      fields: '',
       skip: 0
     }
 
@@ -57,7 +77,7 @@ export class UrlsController {
     }
 
 
-    return await this.urlsService.findAll(userId, newQueries);
+    return await this.urlsService.findAll({ ...filters, owner_id }, newQueries);
   }
 
   @Get(':id')
