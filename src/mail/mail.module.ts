@@ -12,8 +12,6 @@ import { join } from 'path';
         MailerModule.forRootAsync({
 
             useFactory: async () => ({
-
-
                 transport: {
                     host: process.env.SMPT_HOST,
                     port: 2525,

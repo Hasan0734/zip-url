@@ -10,8 +10,9 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
-    forbidNonWhitelisted: true,
+    forbidNonWhitelisted: false,
     stopAtFirstError: true,
+    transform: true
     // exceptionFactory: (errors:any) => {
     //   const result = errors.map((error) => ({
     //     property: error.property,

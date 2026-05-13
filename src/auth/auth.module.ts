@@ -7,6 +7,7 @@ import { UserModule } from 'src/user/user.module';
 import { JwtModule } from '@nestjs/jwt';
 import { Tokens, TokensSchema } from 'src/user/schemas/token.schema';
 import { MailModule } from 'src/mail/mail.module';
+import { ResendModule } from 'src/resend/resend.module';
 
 @Module({
   controllers: [AuthController],
@@ -20,7 +21,8 @@ import { MailModule } from 'src/mail/mail.module';
       signOptions: { expiresIn: '15m' }
     }),
     MongooseModule.forFeature([{ name: Tokens.name, schema: TokensSchema }]),
-    MailModule
+    MailModule,
+    ResendModule
 
   ],
 })

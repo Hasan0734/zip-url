@@ -29,7 +29,7 @@ export class UrlsController {
     return await this.urlsService.create(createUrlDto, userId);
   }
 
-  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @Throttle({ default: { limit: 50, ttl: 60000 } })
   @Get()
   @UseGuards(AuthGuard)
   async findAll(@Request() req, @Query() queries) {

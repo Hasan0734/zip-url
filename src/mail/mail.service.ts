@@ -9,7 +9,6 @@ export class MailService {
 
     async sendEmail(mailDto: MailDto) {
         console.log(mailDto)
-
         try {
             await this.mailerService.sendMail(mailDto);
 

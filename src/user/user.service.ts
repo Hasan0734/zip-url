@@ -24,6 +24,16 @@ export class UserService {
       throw error;
     }
   }
+  async findAll() {
+    try {
+      const users = await this.userModel.find().select("-password").exec();
+      const total = await this.userModel.countDocuments()
+
+      return {users, total};
+    } catch (error) {
+      throw error;
+    }
+  }
   async findUserByEmail(email: string) {
     try {
       const user = await this.userModel.findOne({ email });
@@ -52,7 +62,7 @@ export class UserService {
         returnDocument: 'after'
       }).select("-password")
       if (!user) {
-       throw new NotFoundException("Your credentials is wrong!")
+        throw new NotFoundException("Your credentials is wrong!")
       }
       return user;
     } catch (error) {
@@ -65,7 +75,7 @@ export class UserService {
         returnDocument: 'after'
       }).select("-password")
       if (!user) {
-       throw new NotFoundException("Your credentials is wrong!")
+        throw new NotFoundException("Your credentials is wrong!")
       }
       return user;
     } catch (error) {

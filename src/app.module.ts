@@ -13,6 +13,7 @@ import { APP_GUARD, RouterModule } from '@nestjs/core';
 import { CacheModule } from '@nestjs/cache-manager';
 import { createKeyv } from '@keyv/redis';
 import { MailModule } from './mail/mail.module';
+import { ResendModule } from './resend/resend.module';
 
 @Module({
   imports: [
@@ -32,9 +33,7 @@ import { MailModule } from './mail/mail.module';
       isGlobal: true,
       stores: [createKeyv(process.env.REDIS_STORE)]
     }),
-
     AuthModule,
-
     RouterModule.register([
       {
         path: 'api',
@@ -42,14 +41,16 @@ import { MailModule } from './mail/mail.module';
           AuthModule,
           UrlsModule,
           ClicksModule,
+          UserModule,
         ]
       }
     ]),
 
 
-    UserModule,
+
     MailModule,
     RedirectModule,
+    ResendModule,
   ],
   controllers: [AppController],
   providers: [AppService, {

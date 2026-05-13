@@ -133,7 +133,6 @@ export class UrlsService {
 
       const res = await this.urlModel.findOne({ custom_alias });
 
-      console.log(res)
       if (!res) {
         return {
           message: "Alias is vailable",
