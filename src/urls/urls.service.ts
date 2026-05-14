@@ -45,19 +45,20 @@ export class UrlsService {
   async findAll(filters: any, queries: QueryTypes) {
 
     try {
-      const urls = await this.urlModel.find(filters )
+      const urls = await this.urlModel.find(filters)
         .skip(queries.skip)
         .limit(queries.limit)
         .select(queries.fields)
         .sort(queries.sortBy);
 
-      const total = await this.urlModel.find( filters ).countDocuments();
+      const total = await this.urlModel.find(filters).countDocuments();
       const page = Math.ceil(total / queries.limit)
 
       return {
         urls,
         total,
-        page
+        page,
+        limit: queries.limit
       };
     } catch (error) {
       throw error;
@@ -73,18 +74,20 @@ export class UrlsService {
       const shortCodeKey = `short:${short_code}`;
       const data = await this.cache.get(shortCodeKey);
       if (data) return { type: 'OK', data };
+
       const url = await this.urlModel.findOne({ $or: [{ short_code }, { custom_alias: short_code }] });
 
       if (!url) {
         return { type: 'NOT_FOUND' };
       }
-      await this.cache.set(shortCodeKey, url, 3600000) // 3600000 1hours cache
-      if (url.is_active) {
+
+      if (!url.is_active) {
         return { type: 'DISABLED' };
       }
       if (url.expires_at && url.expires_at < new Date()) {
         return { type: 'EXPIRED' };
       }
+      await this.cache.set(shortCodeKey, url, 3600000)
       return { type: 'OK', data: url };
     } catch (error) {
       throw error
@@ -100,6 +103,14 @@ export class UrlsService {
       if (!updated) {
         throw new NotFoundException()
       }
+
+      const shortCodeKey = `short:${updated.short_code}`;
+      await this.cache.del(shortCodeKey);
+
+      if (updated.custom_alias) {
+        await this.cache.del(`short:${updated.custom_alias}`);
+      }
+
       return { message: "URL updated!", success: true };
     } catch (error) {
       throw error;
@@ -110,6 +121,14 @@ export class UrlsService {
 
     try {
       const url = await this.urlModel.findOneAndDelete({ _id });
+      const shortCodeKey = `short:${url.short_code}`;
+      await this.cache.del(shortCodeKey);
+
+      if (url.custom_alias) {
+        const customAliasKey = `short:${url.custom_alias}`;
+        await this.cache.del(customAliasKey);
+      }
+
       if (!url) {
         throw new NotFoundException()
       }

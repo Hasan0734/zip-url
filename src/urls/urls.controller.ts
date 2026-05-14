@@ -16,6 +16,9 @@ import { RequireVerified } from 'src/auth/decorator/require-verified.decorator';
 import { CustomAliasDto } from './dto/custom-alias.dto';
 import { Throttle } from '@nestjs/throttler';
 
+const MAX_LIMIT = 50;
+const DEFAULT_LIMIT = 20;
+
 @Controller('urls')
 export class UrlsController {
   constructor(private readonly urlsService: UrlsService,
@@ -36,57 +39,108 @@ export class UrlsController {
 
     const owner_id = req.user.sub
 
-    let filters = { ...req.query };
-    const excludeFields = ["sort", "page", "limit", "fields", "owner_id", "search"];
-    excludeFields.forEach((field) => delete filters[field]);
+    const {
+      sort,
+      page = "1",
+      limit,
+      fields,
+      search,
+      is_active,
+    } = queries;
 
-    if (queries?.is_active) {
-      filters.is_active = JSON.parse(queries.is_active)
+    const filters: any = Object.fromEntries(Object.entries(queries).filter(([key]) => !["sort", "page", "limit", "fields", "search", "owner_id"].includes(key)))
+
+
+    if (is_active !== undefined) {
+      filters.is_active = JSON.parse(is_active as string)
     }
 
-    if (queries?.search) {
+    if (search) {
       const searchRegex = new RegExp(queries.search, 'i');
 
-      filters = {
-        ...filters,
-        $or: [
-          { original_url: { $regex: searchRegex } },
-          { short_code: { $regex: searchRegex } },
-          { custom_alias: { $regex: searchRegex } }
-        ]
-      }
+      filters.$or = [
+        { original_url: { $regex: searchRegex } },
+        { short_code: { $regex: searchRegex } },
+        { custom_alias: { $regex: searchRegex } }
+      ]
     }
 
+    const parsedLimit = Math.min(
+      Number(limit) || DEFAULT_LIMIT,
+      MAX_LIMIT
+    );
 
-    const newQueries: any = {
-      limit: 20,
-      skip: 0
+    const parsedPage = Math.max(
+      Number(page) || 1,
+      1
+    );
+
+    const queryOption = {
+      limit: parsedLimit,
+      skip: (parsedPage - 1) * parsedLimit,
+      ...(sort && {
+        sortBy: (sort as string).split(",").join(" ")
+      }),
+      ...(fields && {
+        fields: (fields as string).split(',').join(" ")
+      })
     }
 
-    if (queries.sort) {
-      const sortBy = queries.sort.split(',').join(' ');
-      newQueries.sortBy = sortBy;
-    }
-    if (queries.fields) {
-      const fields = queries.fields.split(',').join(' ');
-      newQueries.fields = fields;
-    }
-    if (queries.page) {
+    // let filters = { ...req.query };
+    // const excludeFields = ["sort", "page", "limit", "fields", "owner_id", "search"];
+    // excludeFields.forEach((field) => delete filters[field]);
 
-      const page = queries.page === '0' ? 1 : queries.page;
-      const { limit = 10 } = queries;
+    // if (queries?.is_active) {
+    //   filters.is_active = JSON.parse(queries.is_active)
+    // }
 
-      const skip = (page - 1) * parseInt(limit);
-      newQueries.skip = skip;
-      newQueries.limit = limit
-    }
+    // if (queries?.search) {
+    //   const searchRegex = new RegExp(queries.search, 'i');
 
-    if(queries.limit) {
-      newQueries.limit = queries.limit
-    }
+    //   filters = {
+    //     ...filters,
+    //     $or: [
+    //       { original_url: { $regex: searchRegex } },
+    //       { short_code: { $regex: searchRegex } },
+    //       { custom_alias: { $regex: searchRegex } }
+    //     ]
+    //   }
+    // }
+    // const newQueries: any = {
+    //   limit: 20,
+    //   skip: 0
+    // }
+
+    // if (queries.sort) {
+    //   const sortBy = queries.sort.split(',').join(' ');
+    //   newQueries.sortBy = sortBy;
+    // }
+    // if (queries.fields) {
+    //   const fields = queries.fields.split(',').join(' ');
+    //   newQueries.fields = fields;
+    // }
+    // if (queries.page) {
+
+    //   const page = queries.page === '0' ? 1 : queries.page;
+    //   const { limit = 10 } = queries;
+
+    //   const skip = (page - 1) * parseInt(limit);
+    //   newQueries.skip = skip;
+    //   newQueries.limit = limit
+    // }
+
+    // if (queries.limit) {
+    //   const limit = Number(queries.limit);
+
+    //   if (limit > 50) {
+    //     newQueries.limit = 50
+    //   } else {
+    //     newQueries.limit = limit
+    //   }
+    // }
 
 
-    return await this.urlsService.findAll({ ...filters, owner_id }, newQueries);
+    return await this.urlsService.findAll({ ...filters, owner_id }, queryOption);
   }
 
   @Get(':id')

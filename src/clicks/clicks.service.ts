@@ -7,6 +7,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import axios from 'axios';
 import { UAParser } from 'ua-parser-js';
 import { UrlsService } from 'src/urls/urls.service';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class ClicksService {
@@ -59,6 +60,18 @@ export class ClicksService {
     }
   }
 
+  async deleteByUrlId(id: Types.ObjectId) {
+    try {
+      const url = await this.clickModel.findOneAndDelete({ id });
+
+      if (!url) {
+        throw new NotFoundException()
+      }
+      return { message: "URL Deleted!", success: true };
+    } catch (error) {
+      throw error
+    }
+  }
 
   async track(url: any, req: any) {
 
