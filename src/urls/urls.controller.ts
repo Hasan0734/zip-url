@@ -197,4 +197,12 @@ export class UrlsController {
     return await this.urlsService.customAliasAvailable(customAliasDto)
   }
 
+  @Get('stats/summary')
+  @UseGuards(AuthGuard)
+  async getStats(@Request() req) {
+    const owner_id = req.user.sub
+
+    return this.urlsService.getStaticSummary(owner_id)
+  }
+
 }

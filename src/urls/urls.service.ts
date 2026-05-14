@@ -6,6 +6,7 @@ import { Url } from './schemas/url.schema';
 import { nanoid } from 'nanoid';
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CustomAliasDto } from './dto/custom-alias.dto';
+import { Types } from 'mongoose';
 
 
 type QueryTypes = {
@@ -40,7 +41,6 @@ export class UrlsService {
       throw error;
     }
   }
-
 
   async findAll(filters: any, queries: QueryTypes) {
 
@@ -167,5 +167,36 @@ export class UrlsService {
     } catch (error) {
 
     }
+  }
+
+  async getStaticSummary(owner_id: Types.ObjectId) {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const [total, activeLinks, todayCreated, last24HoursAgo, clickStats] = await Promise.all([
+      this.urlModel.countDocuments({ owner_id }),
+      this.urlModel.countDocuments({ owner_id, is_active: true }),
+      this.urlModel.countDocuments({ owner_id, createdAt: { $gte: startOfToday } }),
+      this.urlModel.countDocuments({ owner_id, createdAt: { $gte: twentyFourHoursAgo } }),
+      this.urlModel.aggregate([
+        { $match: { owner_id } },
+        { $group: { _id: null, total: { $sum: "$click_count" } } }
+      ])
+    ])
+
+    const totalClicks = clickStats[0]?.total || 0;
+    // const total = await this.urlModel.countDocuments({ owner_id })
+    // const activeLinks = await this.urlModel.countDocuments({ owner_id, is_active: true })
+    // const todayCreated = await this.urlModel.countDocuments({ owner_id, createdAt: { $gte: startOfToday } })
+    // const last24HoursAgo = await this.urlModel.countDocuments({ owner_id, createdAt: { $gte: twentyFourHoursAgo } })
+
+    return {
+      total,
+      activeLinks,
+      todayCreated,
+      last24HoursAgo,
+      totalClicks
+    };
   }
 }
