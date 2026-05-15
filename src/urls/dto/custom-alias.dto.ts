@@ -1,5 +1,6 @@
 
-import {  IsOptional,  Matches, MaxLength, MinLength } from "class-validator";
+import { IsOptional, IsString, Matches, MaxLength, MinLength } from "class-validator";
+import { Types } from "mongoose";
 
 
 export class CustomAliasDto {
@@ -11,5 +12,10 @@ export class CustomAliasDto {
         message: "Alias should not contain spaces!"
     })
     custom_alias!: string;
+
+    @IsOptional()
+    @IsString()
+    url_id!: Types.ObjectId
+
 
 }

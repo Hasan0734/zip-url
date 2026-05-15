@@ -150,7 +150,7 @@ export class UrlsService {
     try {
       const custom_alias = customAliasDto.custom_alias
 
-      const res = await this.urlModel.findOne({ custom_alias });
+      const res = await this.urlModel.findOne({ custom_alias, _id: { $ne: customAliasDto.url_id } });
 
       if (!res) {
         return {
@@ -174,7 +174,7 @@ export class UrlsService {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const [total, activeLinks, todayCreated, last24HoursAgo, clickStats] = await Promise.all([
+    const [total, activeLinks, todayCreated, last24HoursAgo, clickStats, last24HoursClicksStats] = await Promise.all([
       this.urlModel.countDocuments({ owner_id }),
       this.urlModel.countDocuments({ owner_id, is_active: true }),
       this.urlModel.countDocuments({ owner_id, createdAt: { $gte: startOfToday } }),
@@ -182,10 +182,16 @@ export class UrlsService {
       this.urlModel.aggregate([
         { $match: { owner_id } },
         { $group: { _id: null, total: { $sum: "$click_count" } } }
+      ]),
+      this.urlModel.aggregate([
+        { $match: { owner_id, createdAt: { $gte: twentyFourHoursAgo } } },
+        { $group: { _id: null, total: { $sum: "$click_count" } } }
       ])
     ])
 
     const totalClicks = clickStats[0]?.total || 0;
+    const last24HoursClicks = last24HoursClicksStats[0]?.total || 0;
+
     // const total = await this.urlModel.countDocuments({ owner_id })
     // const activeLinks = await this.urlModel.countDocuments({ owner_id, is_active: true })
     // const todayCreated = await this.urlModel.countDocuments({ owner_id, createdAt: { $gte: startOfToday } })
@@ -196,7 +202,8 @@ export class UrlsService {
       activeLinks,
       todayCreated,
       last24HoursAgo,
-      totalClicks
+      totalClicks,
+      last24HoursClicks
     };
   }
 }
