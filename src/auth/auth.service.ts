@@ -19,6 +19,7 @@ import { TokenType } from './enum/tokentype.enum';
 import { VerifyOtpDto } from './dto/verifyotp.dto';
 import { generateOTP, generatePayload, handleHash } from 'src/common/utils/auth.util';
 import { ResendService } from 'src/resend/resend.service';
+import { Status } from './enum/status.enum';
 
 const refresh_token_expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
 
@@ -27,7 +28,7 @@ const refresh_token_expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 
 @Injectable()
 export class AuthService {
   constructor(private userService: UserService, private jwtService: JwtService,
-     @InjectModel(Tokens.name) private tokenModel, private mailService: MailService,private resend:ResendService) { }
+    @InjectModel(Tokens.name) private tokenModel, private mailService: MailService, private resend: ResendService) { }
 
   async registerUser(createUserDto: CreateUserDto) {
     const salt = await bcrypt.genSalt(10);
@@ -42,27 +43,26 @@ export class AuthService {
     const token = await this.createToken(user._id, TokenType.EMAIL_VERIFICATION, expires_at)
     const verifyUrl = `${process.env.APP_URL}/auth/verify-email?token=${token}`;
 
-    const res = await this.resend.sendWelcomeEmail("jahid0734@gmail.com");
+    // const res = await this.resend.sendWelcomeEmail("jahid0734@gmail.com");
 
-    console.log(res)
-    // await this.mailService.sendEmail({
-    //   to: user.email,
-    //   subject: 'Welcome',
-    //   template: 'welcome',
-    //   context: {
-    //     name: user.first_name,
-    //   }
-    // })
+    await this.mailService.sendEmail({
+      to: user.email,
+      subject: 'Welcome',
+      template: 'welcome',
+      context: {
+        name: user.first_name,
+      }
+    })
 
-    // await this.mailService.sendEmail({
-    //   to: user.email,
-    //   subject: 'Verify your email',
-    //   template: 'email-verification',
-    //   context: {
-    //     verification_url: verifyUrl,
-    //     name: user.first_name
-    //   }
-    // })
+    await this.mailService.sendEmail({
+      to: user.email,
+      subject: 'Verify your email',
+      template: 'email-verification',
+      context: {
+        verification_url: verifyUrl,
+        name: user.first_name
+      }
+    })
 
     return { message: "Registration successfully. We sent email for the verification. Check inbox or spam.", success: true };
 
@@ -210,6 +210,7 @@ export class AuthService {
 
       const user = await this.userService.findUserById(record.user_id);
       user.is_verified = true;
+      user.status = Status.ACTIVE
       await user.save();
 
       await this.tokenModel.deleteOne({ _id: record._id });
@@ -234,9 +235,9 @@ export class AuthService {
     const token = await this.createToken(user._id, TokenType.EMAIL_VERIFICATION, expires_at)
 
     const verifyUrl = `${process.env.APP_URL}/auth/verify-email?token=${token}`;
-    const res = await this.resend.sendWelcomeEmail("jahid0734@gmail.com");
+    // const res = await this.resend.sendWelcomeEmail("jahid0734@gmail.com");
 
-    console.log(res)
+
 
     await this.mailService.sendEmail({
       to: user.email,
