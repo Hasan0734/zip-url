@@ -45,24 +45,24 @@ export class AuthService {
 
     // const res = await this.resend.sendWelcomeEmail("jahid0734@gmail.com");
 
-    await this.mailService.sendEmail({
-      to: user.email,
-      subject: 'Welcome',
-      template: 'welcome',
-      context: {
-        name: user.first_name,
-      }
-    })
+    // await this.mailService.sendEmail({
+    //   to: user.email,
+    //   subject: 'Welcome',
+    //   template: 'welcome',
+    //   context: {
+    //     name: user.first_name,
+    //   }
+    // })
 
-    await this.mailService.sendEmail({
-      to: user.email,
-      subject: 'Verify your email',
-      template: 'email-verification',
-      context: {
-        verification_url: verifyUrl,
-        name: user.first_name
-      }
-    })
+    // await this.mailService.sendEmail({
+    //   to: user.email,
+    //   subject: 'Verify your email',
+    //   template: 'email-verification',
+    //   context: {
+    //     verification_url: verifyUrl,
+    //     name: user.first_name
+    //   }
+    // })
 
     return { message: "Registration successfully. We sent email for the verification. Check inbox or spam.", success: true };
 
@@ -113,16 +113,16 @@ export class AuthService {
     const hashPassword = await bcrypt.hash(changePassword.new_password, salt);
     const user = await this.userService.updatePassword(id, hashPassword);
 
-    await this.mailService.sendEmail({
-      from: process.env.SECURITY_EMAIL,
-      to: user.email,
-      subject: 'Changed password',
-      template: 'changed-password',
-      context: {
-        name: user.first_name,
-        secure_account_link: ""
-      }
-    })
+    // await this.mailService.sendEmail({
+    //   from: process.env.SECURITY_EMAIL,
+    //   to: user.email,
+    //   subject: 'Changed password',
+    //   template: 'changed-password',
+    //   context: {
+    //     name: user.first_name,
+    //     secure_account_link: ""
+    //   }
+    // })
 
     return { message: "Password changed!", success: true }
   }
@@ -137,16 +137,16 @@ export class AuthService {
 
       const token = await this.createToken(user._id, TokenType.RESET_PASSWORD, expires_at)
 
-      await this.mailService.sendEmail({
-        from: process.env.SECURITY_EMAIL,
-        to: user.email,
-        subject: 'Reset password',
-        template: 'reset-password',
-        context: {
-          reset_link: `${process.env.APP_URL}/auth/reset-password?token=${token}`,
-          name: user.first_name
-        }
-      })
+      // await this.mailService.sendEmail({
+      //   from: process.env.SECURITY_EMAIL,
+      //   to: user.email,
+      //   subject: 'Reset password',
+      //   template: 'reset-password',
+      //   context: {
+      //     reset_link: `${process.env.APP_URL}/auth/reset-password?token=${token}`,
+      //     name: user.first_name
+      //   }
+      // })
 
       return {
         message:
@@ -176,15 +176,15 @@ export class AuthService {
       const hashPassword = await bcrypt.hash(resetDto.new_password, salt);
       const user = await this.userService.updatePassword(record.user_id, hashPassword);
 
-      await this.mailService.sendEmail({
-        from: process.env.SECURITY_EMAIL,
-        to: user.email,
-        subject: 'Changed password',
-        template: 'changed-password',
-        context: {
-          name: user.first_name
-        }
-      })
+      // await this.mailService.sendEmail({
+      //   from: process.env.SECURITY_EMAIL,
+      //   to: user.email,
+      //   subject: 'Changed password',
+      //   template: 'changed-password',
+      //   context: {
+      //     name: user.first_name
+      //   }
+      // })
 
       await this.tokenModel.deleteOne({ _id: record._id })
       return { message: "Password changed", success: true }
@@ -239,21 +239,22 @@ export class AuthService {
 
 
 
-    await this.mailService.sendEmail({
-      to: user.email,
-      from: process.env.SMTP_FROM,
-      subject: 'Verify your email',
-      template: 'email-verification',
-      context: {
-        verification_url: verifyUrl,
-        name: user.first_name
-      }
-    })
+    // await this.mailService.sendEmail({
+    //   to: user.email,
+    //   from: process.env.SMTP_FROM,
+    //   subject: 'Verify your email',
+    //   template: 'email-verification',
+    //   context: {
+    //     verification_url: verifyUrl,
+    //     name: user.first_name
+    //   }
+    // })
 
     return {
       message: "Verification link sent your email. Check your email inbox or spam forlder.",
       token: token,
-      success: true
+      success: true,
+      verifyUrl
     }
 
   }
@@ -393,14 +394,14 @@ export class AuthService {
         type: TokenType.OTP_VERIFICATION,
         expires_at: new Date(Date.now() + 5 * 60 * 1000)
       }) //5 minutes expires
-      await this.mailService.sendEmail({
-        to: email,
-        subject: 'OTP verification code',
-        template: 'otp-mail',
-        context: {
-          otp_code: otp,
-        }
-      })
+      // await this.mailService.sendEmail({
+      //   to: email,
+      //   subject: 'OTP verification code',
+      //   template: 'otp-mail',
+      //   context: {
+      //     otp_code: otp,
+      //   }
+      // })
 
       return {
         success: true,
