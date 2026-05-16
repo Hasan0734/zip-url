@@ -41,7 +41,7 @@ export class AuthService {
     const expires_at = new Date(Date.now() + 60 * 60 * 1000)
 
     const token = await this.createToken(user._id, TokenType.EMAIL_VERIFICATION, expires_at)
-    const verifyUrl = `${process.env.APP_URL}/auth/verify-email?token=${token}`;
+    const verifyUrl = `${process.env.APP_URL}/verify-email?token=${token}`;
 
     // const res = await this.resend.sendWelcomeEmail("jahid0734@gmail.com");
 
@@ -152,7 +152,7 @@ export class AuthService {
         message:
           `We sent a password reset link to ${email}. Please check your inbox and follow the instructions to reset your password.`,
         success: true,
-        reset_link: `${process.env.APP_URL}/auth/reset-password?token=${token}`
+        reset_link: `${process.env.APP_URL}/reset-password?token=${token}`
       }
     } catch (error) {
       throw error
@@ -234,7 +234,7 @@ export class AuthService {
 
     const token = await this.createToken(user._id, TokenType.EMAIL_VERIFICATION, expires_at)
 
-    const verifyUrl = `${process.env.APP_URL}/auth/verify-email?token=${token}`;
+    const verifyUrl = `${process.env.APP_URL}/verify-email?token=${token}`;
     // const res = await this.resend.sendWelcomeEmail("jahid0734@gmail.com");
 
 
