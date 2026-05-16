@@ -12,7 +12,7 @@ import { Role } from './enum/role.enum';
 import { Types } from 'mongoose';
 import crypto from 'crypto'
 import { InjectModel } from '@nestjs/mongoose';
-import { Tokens, TokensDocument } from 'src/user/schemas/token.schema';
+import { Tokens } from 'src/user/schemas/token.schema';
 import { ResetPasswordDto } from './dto/ResetPassword.dto';
 import { MailService } from 'src/mail/mail.service';
 import { TokenType } from './enum/tokentype.enum';

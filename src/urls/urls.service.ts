@@ -170,6 +170,9 @@ export class UrlsService {
   }
 
   async getStaticSummary(owner_id: Types.ObjectId) {
+
+    //  await new Promise((r) => setTimeout(r, 5000))
+
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);

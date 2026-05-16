@@ -14,6 +14,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { createKeyv } from '@keyv/redis';
 import { MailModule } from './mail/mail.module';
 import { ResendModule } from './resend/resend.module';
+import { AnalyticsService } from './analytics/analytics.service';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -51,11 +53,12 @@ import { ResendModule } from './resend/resend.module';
     MailModule,
     RedirectModule,
     ResendModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService, {
     provide: APP_GUARD,
     useClass: ThrottlerGuard,
-  },],
+  }, AnalyticsService,],
 })
 export class AppModule { }
