@@ -6,16 +6,18 @@ import { AuthGuard } from 'src/auth/guard/auth.guard';
 export class ClicksController {
   constructor(private readonly clicksService: ClicksService) { }
 
-  @Get()
+
+
+  @Get('/all-devices')
   @UseGuards(AuthGuard)
   findAll(@Request() req) {
     const owner_id = req.user.sub
-    return this.clicksService.findAll(owner_id);
+    return this.clicksService.getAllDevices(owner_id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.clicksService.findOne(id);
-  }
+  // @Get(':id')
+  // findOne(@Param('id') id: string) {
+  //   return this.clicksService.findOne(id);
+  // }
 
 }

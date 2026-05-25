@@ -7,6 +7,7 @@ import { nanoid } from 'nanoid';
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CustomAliasDto } from './dto/custom-alias.dto';
 import { Types } from 'mongoose';
+import { ClicksService } from 'src/clicks/clicks.service';
 
 
 type QueryTypes = {
@@ -19,7 +20,7 @@ type QueryTypes = {
 @Injectable()
 export class UrlsService {
 
-  constructor(@InjectModel(Url.name) private urlModel, @Inject(CACHE_MANAGER) private cache: Cache) { }
+  constructor(@InjectModel(Url.name) private urlModel, private clicksService: ClicksService, @Inject(CACHE_MANAGER) private cache: Cache) { }
 
   async create(createUrlDto: CreateUrlDto, owner_id: string) {
     const short_code = nanoid(8)
@@ -177,7 +178,7 @@ export class UrlsService {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const [total, activeLinks, todayCreated, last24HoursAgo, clickStats, last24HoursClicksStats] = await Promise.all([
+    const [total, activeLinks, todayCreated, last24HoursAgo, clickStats, last24HoursClicksStats, topCountries, devices, weekData] = await Promise.all([
       this.urlModel.countDocuments({ owner_id }),
       this.urlModel.countDocuments({ owner_id, is_active: true }),
       this.urlModel.countDocuments({ owner_id, createdAt: { $gte: startOfToday } }),
@@ -189,11 +190,22 @@ export class UrlsService {
       this.urlModel.aggregate([
         { $match: { owner_id, createdAt: { $gte: twentyFourHoursAgo } } },
         { $group: { _id: null, total: { $sum: "$click_count" } } }
-      ])
+      ]
+      ),
+
+      await this.clicksService.getToCountries(owner_id),
+      await this.clicksService.getAllDevices(owner_id),
+      await this.clicksService.getAllUrlWeekData(owner_id)
+
+
     ])
 
     const totalClicks = clickStats[0]?.total || 0;
     const last24HoursClicks = last24HoursClicksStats[0]?.total || 0;
+
+
+
+
 
     // const total = await this.urlModel.countDocuments({ owner_id })
     // const activeLinks = await this.urlModel.countDocuments({ owner_id, is_active: true })
@@ -206,7 +218,10 @@ export class UrlsService {
       todayCreated,
       last24HoursAgo,
       totalClicks,
-      last24HoursClicks
+      last24HoursClicks,
+      topCountries,
+      devices,
+      weekData
     };
   }
 }

@@ -1,13 +1,13 @@
 import { forwardRef, NotFoundException } from '@nestjs/common';
 import { CreateClickDto } from './dto/create-click.dto';
 import { Click } from './schemas/click.schema';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectModel, IsObjectIdPipe } from '@nestjs/mongoose';
 import { Cache, CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Inject, Injectable } from "@nestjs/common";
 import axios from 'axios';
 import { UAParser } from 'ua-parser-js';
 import { UrlsService } from 'src/urls/urls.service';
-import { Types } from 'mongoose';
+import { Types, ObjectId } from 'mongoose';
 
 @Injectable()
 export class ClicksService {
@@ -70,6 +70,325 @@ export class ClicksService {
       return { message: "URL Deleted!", success: true };
     } catch (error) {
       throw error
+    }
+  }
+
+  async getToCountries(owner: Types.ObjectId) {
+
+    const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
+    try {
+      const data = await this.clickModel.aggregate([
+        {
+          $match: {
+            owner: ownerObjectId
+          }
+        },
+        {
+          $group: {
+            _id: "$country",
+            countryClicks: { $sum: 1 }
+          }
+        },
+        {
+          $setWindowFields: {
+            output: {
+              grandTotalClicks: {
+                $sum: "$countryClicks"
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            country: { $ifNull: ["$_id", "Unknown"] },
+            clicks: "$countryClicks",
+            percentage: {
+              $round: [
+                {
+                  $multiply: [
+                    {
+                      $divide: [
+                        "$countryClicks",
+                        "$grandTotalClicks"
+                      ]
+                    },
+                    100
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          $sort: {
+            percentage: -1
+          }
+        }
+      ])
+      return data;
+    } catch (error) {
+      console.log(error)
+      throw error;
+    }
+
+  }
+
+  async getAllDevices(owner: Types.ObjectId) {
+
+    const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
+    try {
+
+      const data = await this.clickModel.aggregate([
+        {
+          $match: {
+            owner: ownerObjectId
+          }
+        },
+        {
+          $group: {
+            _id: "$device",
+            deviceClicks: { $sum: 1 }
+          }
+        },
+        {
+          $setWindowFields: {
+            output: {
+              grandTotalClicks: {
+                $sum: "$deviceClicks"
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            device: { $ifNull: ["$_id", "Unknown"] },
+            clicks: "$deviceClicks",
+            percentage: {
+              $round: [
+                {
+                  $multiply: [
+                    {
+                      $divide: [
+                        "$deviceClicks",
+                        "$grandTotalClicks"
+                      ]
+                    },
+                    100
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          $sort: {
+            percentage: -1
+          }
+        }
+      ])
+
+      return data;
+    } catch (error) {
+      throw error;
+    }
+
+  }
+
+  async getAllUrlWeekData(owner: Types.ObjectId) {
+    try {
+      const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
+      const [previousWeek, currentWeek] = await Promise.all([
+        await this.clickModel.aggregate(
+          [
+            {
+              $match: {
+                owner: ownerObjectId,
+                $expr: {
+                  $and: [
+                    {
+                      $gte: [
+                        "$createdAt",
+                        {
+                          $dateSubtract: {
+                            startDate: {
+                              $dateTrunc: {
+                                date: "$$NOW",
+                                unit: "week",
+                                startOfWeek: "Mon",
+                                timezone: "UTC" // Set your local timezone here if needed
+                              }
+                            },
+                            amount: 1,
+                            unit: "week"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      $lt: [
+                        "$createdAt",
+                        {
+                          $dateTrunc: {
+                            date: "$$NOW",
+                            unit: "week",
+                            startOfWeek: "Mon",
+                            timezone: "UTC" // Ensure this matches the above timezone
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              $group: {
+                _id: {
+                  $isoDayOfWeek: {
+                    date: "$createdAt",
+                    timezone: "UTC"
+                  }
+                },
+                clicks: { $sum: 1 }
+              }
+            },
+
+            {
+              $sort: {
+                _id: 1
+              }
+            },
+            {
+              $project: {
+                _id: 0,
+                day: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $eq: ["$_id", 1] },
+                        then: "Mon"
+                      },
+                      {
+                        case: { $eq: ["$_id", 2] },
+                        then: "Tue"
+                      },
+                      {
+                        case: { $eq: ["$_id", 3] },
+                        then: "Wed"
+                      },
+                      {
+                        case: { $eq: ["$_id", 4] },
+                        then: "Thu"
+                      },
+                      {
+                        case: { $eq: ["$_id", 5] },
+                        then: "Fri"
+                      },
+                      {
+                        case: { $eq: ["$_id", 6] },
+                        then: "Sat"
+                      },
+                      {
+                        case: { $eq: ["$_id", 7] },
+                        then: "Sun"
+                      }
+                    ],
+                    default: "Mon"
+                  }
+                },
+                clicks: 1
+              }
+            }
+          ]
+        ),
+        await this.clickModel.aggregate([
+          {
+            $match: {
+              owner: ownerObjectId,
+              $expr: {
+                $gte: [
+                  "$createdAt",
+                  {
+                    $dateTrunc: {
+                      date: "$$NOW",
+                      unit: "week",
+                      startOfWeek: "Mon",
+                      timezone: "+06:00"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            $group: {
+              _id: {
+                $isoDayOfWeek: {
+                  date: "$createdAt",
+                  timezone: "UTC"
+                }
+              },
+              clicks: {
+                $sum: 1
+              }
+            }
+          },
+          {
+            $sort: {
+              _id: 1
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              day: {
+                $switch: {
+                  branches: [
+                    {
+                      case: { $eq: ["$_id", 1] },
+                      then: "Mon"
+                    },
+                    {
+                      case: { $eq: ["$_id", 2] },
+                      then: "Tue"
+                    },
+                    {
+                      case: { $eq: ["$_id", 3] },
+                      then: "Wed"
+                    },
+                    {
+                      case: { $eq: ["$_id", 4] },
+                      then: "Thu"
+                    },
+                    {
+                      case: { $eq: ["$_id", 5] },
+                      then: "Fri"
+                    },
+                    {
+                      case: { $eq: ["$_id", 6] },
+                      then: "Sat"
+                    },
+                    {
+                      case: { $eq: ["$_id", 7] },
+                      then: "Sun"
+                    }
+                  ],
+                  default: "unknown"
+                }
+              },
+              clicks: 1
+            }
+          }
+        ])
+
+      ])
+
+      return [{ previousWeek }, { currentWeek }]
+
+    } catch (error) {
+      throw error;
     }
   }
 
