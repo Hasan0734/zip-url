@@ -14,6 +14,25 @@ export class RedirctController {
 
     async getUrl(
         @Param('short_code') short_code: string, @Res() res, @Req() req) {
+        let visitorId =
+            req.cookies.visitorId;
+
+        if (!visitorId) {
+
+            visitorId =
+                crypto.randomUUID();
+
+            res.cookie(
+                "visitorId",
+                visitorId,
+                {
+                    maxAge: 1000 * 60 * 60 * 24 * 365,
+                    httpOnly: true,
+                    sameSite: "lax",
+                    secure: true
+                }
+            );
+        }
         const result = await this.urlsService.findUrlByCode(short_code);
         switch (result.type) {
             case 'NOT_FOUND':
@@ -33,7 +52,7 @@ export class RedirctController {
                 }
 
                 setImmediate(() => {
-                    this.clicksService.track(url, req);
+                    this.clicksService.track(url, req, visitorId);
                 });
 
                 return res.redirect(307, url.original_url);

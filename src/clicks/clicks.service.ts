@@ -213,12 +213,7 @@ export class ClicksService {
                         {
                           $dateSubtract: {
                             startDate: {
-                              $dateTrunc: {
-                                date: "$$NOW",
-                                unit: "week",
-                                startOfWeek: "Mon",
-                                timezone: "UTC" // Set your local timezone here if needed
-                              }
+                              $dateTrunc: { date: "$$NOW", unit: "week", startOfWeek: "Mon", timezone: "UTC" }
                             },
                             amount: 1,
                             unit: "week"
@@ -230,12 +225,7 @@ export class ClicksService {
                       $lt: [
                         "$createdAt",
                         {
-                          $dateTrunc: {
-                            date: "$$NOW",
-                            unit: "week",
-                            startOfWeek: "Mon",
-                            timezone: "UTC" // Ensure this matches the above timezone
-                          }
+                          $dateTrunc: { date: "$$NOW", unit: "week", startOfWeek: "Mon", timezone: "UTC" }
                         }
                       ]
                     }
@@ -245,60 +235,93 @@ export class ClicksService {
             },
             {
               $group: {
-                _id: {
-                  $isoDayOfWeek: {
-                    date: "$createdAt",
-                    timezone: "UTC"
-                  }
-                },
+                _id: { $isoDayOfWeek: { date: "$createdAt", timezone: "UTC" } },
                 clicks: { $sum: 1 }
               }
             },
-
             {
-              $sort: {
-                _id: 1
+              // Group everything together, but also calculate the target Monday of last week
+              $group: {
+                _id: null,
+                lastMonday: {
+                  $first: {
+                    $dateSubtract: {
+                      startDate: {
+                        $dateTrunc: { date: "$$NOW", unit: "week", startOfWeek: "Mon", timezone: "UTC" }
+                      },
+                      amount: 1,
+                      unit: "week"
+                    }
+                  }
+                },
+                stats: { $push: { dayNum: "$_id", clicks: "$clicks" } }
               }
             },
             {
               $project: {
                 _id: 0,
-                day: {
-                  $switch: {
-                    branches: [
-                      {
-                        case: { $eq: ["$_id", 1] },
-                        then: "Mon"
-                      },
-                      {
-                        case: { $eq: ["$_id", 2] },
-                        then: "Tue"
-                      },
-                      {
-                        case: { $eq: ["$_id", 3] },
-                        then: "Wed"
-                      },
-                      {
-                        case: { $eq: ["$_id", 4] },
-                        then: "Thu"
-                      },
-                      {
-                        case: { $eq: ["$_id", 5] },
-                        then: "Fri"
-                      },
-                      {
-                        case: { $eq: ["$_id", 6] },
-                        then: "Sat"
-                      },
-                      {
-                        case: { $eq: ["$_id", 7] },
-                        then: "Sun"
-                      }
+                days: {
+                  $map: {
+                    input: [
+                      // dayOffset represents how many days to add to Monday (Mon = +0, Tue = +1, etc.)
+                      { num: 1, name: "Mon", dayOffset: 0 },
+                      { num: 2, name: "Tue", dayOffset: 1 },
+                      { num: 3, name: "Wed", dayOffset: 2 },
+                      { num: 4, name: "Thu", dayOffset: 3 },
+                      { num: 5, name: "Fri", dayOffset: 4 },
+                      { num: 6, name: "Sat", dayOffset: 5 },
+                      { num: 7, name: "Sun", dayOffset: 6 }
                     ],
-                    default: "Mon"
+                    as: "d",
+                    in: {
+                      day: "$$d.name",
+                      // Dynamically calculate the exact date for this specific weekday
+                      date: {
+                        $dateAdd: {
+                          startDate: "$lastMonday",
+                          unit: "day",
+                          amount: "$$d.dayOffset",
+                          timezone: "UTC"
+                        }
+                      },
+                      clicks: {
+                        $let: {
+                          vars: {
+                            matchedDay: {
+                              $filter: {
+                                input: "$stats",
+                                cond: { $eq: ["$$this.dayNum", "$$d.num"] }
+                              }
+                            }
+                          },
+                          in: {
+                            $ifNull: [
+                              { $arrayElemAt: ["$$matchedDay.clicks", 0] },
+                              0
+                            ]
+                          }
+                        }
+                      }
+                    }
                   }
-                },
-                clicks: 1
+                }
+              }
+            },
+            {
+              $unwind: "$days"
+            },
+            {
+              $project: {
+                day: "$days.day",
+                clicks: "$days.clicks",
+                // Optional: Formats the date to "YYYY-MM-DD". Remove $dateToString if you prefer a raw Date object.
+                date: {
+                  $dateToString: {
+                    format: "%Y-%m-%d",
+                    date: "$days.date",
+                    timezone: "UTC"
+                  }
+                }
               }
             }
           ]
@@ -330,69 +353,541 @@ export class ClicksService {
                   timezone: "UTC"
                 }
               },
-              clicks: {
-                $sum: 1
-              }
+              clicks: { $sum: 1 }
             }
           },
           {
-            $sort: {
-              _id: 1
+            $group: {
+              _id: null,
+              lastMonday: {
+                $first: {
+                  $dateSubtract: {
+                    startDate: {
+                      $dateTrunc: {
+                        date: "$$NOW",
+                        unit: "week",
+                        startOfWeek: "Mon",
+                        timezone: "UTC"
+                      }
+                    },
+                    amount: 1,
+                    unit: "week"
+                  }
+                }
+              },
+              stats: {
+                $push: {
+                  dayNum: "$_id",
+                  clicks: "$clicks"
+                }
+              }
             }
           },
           {
             $project: {
               _id: 0,
-              day: {
-                $switch: {
-                  branches: [
-                    {
-                      case: { $eq: ["$_id", 1] },
-                      then: "Mon"
-                    },
-                    {
-                      case: { $eq: ["$_id", 2] },
-                      then: "Tue"
-                    },
-                    {
-                      case: { $eq: ["$_id", 3] },
-                      then: "Wed"
-                    },
-                    {
-                      case: { $eq: ["$_id", 4] },
-                      then: "Thu"
-                    },
-                    {
-                      case: { $eq: ["$_id", 5] },
-                      then: "Fri"
-                    },
-                    {
-                      case: { $eq: ["$_id", 6] },
-                      then: "Sat"
-                    },
-                    {
-                      case: { $eq: ["$_id", 7] },
-                      then: "Sun"
-                    }
+              days: {
+                $map: {
+                  input: [
+                    // dayOffset represents how many days to add to Monday (Mon = +0, Tue = +1, etc.)
+                    { num: 1, name: "Mon", dayOffset: 0 },
+                    { num: 2, name: "Tue", dayOffset: 1 },
+                    { num: 3, name: "Wed", dayOffset: 2 },
+                    { num: 4, name: "Thu", dayOffset: 3 },
+                    { num: 5, name: "Fri", dayOffset: 4 },
+                    { num: 6, name: "Sat", dayOffset: 5 },
+                    { num: 7, name: "Sun", dayOffset: 6 }
                   ],
-                  default: "unknown"
+                  as: "d",
+                  in: {
+                    day: "$$d.name",
+                    // Dynamically calculate the exact date for this specific weekday
+                    date: {
+                      $dateAdd: {
+                        startDate: "$lastMonday",
+                        unit: "day",
+                        amount: "$$d.dayOffset",
+                        timezone: "UTC"
+                      }
+                    },
+                    clicks: {
+                      $let: {
+                        vars: {
+                          matchedDay: {
+                            $filter: {
+                              input: "$stats",
+                              cond: {
+                                $eq: [
+                                  "$$this.dayNum",
+                                  "$$d.num"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        in: {
+                          $ifNull: [
+                            {
+                              $arrayElemAt: [
+                                "$$matchedDay.clicks",
+                                0
+                              ]
+                            },
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  }
                 }
-              },
-              clicks: 1
+              }
+            }
+          },
+          {
+            $unwind: "$days"
+          },
+          {
+            $project: {
+              day: "$days.day",
+              clicks: "$days.clicks",
+              // Optional: Formats the date to "YYYY-MM-DD". Remove $dateToString if you prefer a raw Date object.
+              date: {
+                $dateToString: {
+                  format: "%Y-%m-%d",
+                  date: "$days.date",
+                  timezone: "UTC"
+                }
+              }
             }
           }
         ])
-
       ])
 
-      return [{ previousWeek }, { currentWeek }]
+
+      // 2. Map current week data and merge previous week clicks by day
+      const result = currentWeek.map(currDay => {
+        const prevDay = previousWeek.find(p => p.day === currDay.day);
+        return {
+          day: currDay.day,
+          clicks: currDay.clicks,
+          previous: prevDay ? prevDay.clicks : 0
+        };
+      });
+
+      return { weeklyClicks: result }
 
     } catch (error) {
       throw error;
     }
   }
 
-  async track(url: any, req: any) {
+  async last7DaysAgo(owner: Types.ObjectId) {
+    const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
+
+    const data = await this.clickModel.aggregate([
+      {
+        // Step 1: Match records from exactly 7 days ago up until right now
+        $match: {
+          owner: ownerObjectId,
+          $expr: {
+            $and: [
+              {
+                $gte: [
+                  "$createdAt",
+                  {
+                    $dateSubtract: {
+                      startDate: {
+                        $dateTrunc: {
+                          date: "$$NOW",
+                          unit: "day",
+                          timezone: "UTC"
+                        }
+                      },
+                      amount: 6, // 6 days ago + today = 7 days total
+                      unit: "day"
+                    }
+                  }
+                ]
+              },
+              {
+                $lte: ["$createdAt", "$$NOW"]
+              }
+            ]
+          }
+        }
+      },
+      {
+        // Step 2: Group by the specific calendar date (YYYY-MM-DD)
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt",
+              timezone: "UTC"
+            }
+          },
+          clicks: { $sum: 1 }
+        }
+      },
+      {
+        // Step 3: Collect existing stats into an array and pass down the midnight anchor of 'today'
+        $group: {
+          _id: null,
+          todayMidnight: {
+            $first: {
+              $dateTrunc: {
+                date: "$$NOW",
+                unit: "day",
+                timezone: "UTC"
+              }
+            }
+          },
+          stats: {
+            $push: {
+              dateStr: "$_id",
+              clicks: "$clicks"
+            }
+          }
+        }
+      },
+      {
+        // Step 4: Generate a rolling 7-day offset sequence (0 is today, -1 is yesterday, etc.)
+        $project: {
+          _id: 0,
+          days: {
+            $map: {
+              input: [0, -1, -2, -3, -4, -5, -6],
+              as: "offset",
+              in: {
+                // Calculate the actual Date object for this offset
+                letDate: {
+                  $dateAdd: {
+                    startDate: "$todayMidnight",
+                    unit: "day",
+                    amount: "$$offset",
+                    timezone: "UTC"
+                  }
+                }
+              }
+            }
+          },
+          stats: 1
+        }
+      },
+      {
+        // Step 5: Unwind the generated dates so we can process them individually
+        $unwind: "$days"
+      },
+      {
+        // Step 6: Extract the weekday name and formatted date string for each day
+        $project: {
+          dateStr: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$days.letDate",
+              timezone: "UTC"
+            }
+          },
+          dayName: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $eq: [
+                      {
+                        $isoDayOfWeek: {
+                          date: "$days.letDate",
+                          timezone: "UTC"
+                        }
+                      },
+                      1
+                    ]
+                  },
+                  then: "Mon"
+                },
+                {
+                  case: {
+                    $eq: [
+                      {
+                        $isoDayOfWeek: {
+                          date: "$days.letDate",
+                          timezone: "UTC"
+                        }
+                      },
+                      2
+                    ]
+                  },
+                  then: "Tue"
+                },
+                {
+                  case: {
+                    $eq: [
+                      {
+                        $isoDayOfWeek: {
+                          date: "$days.letDate",
+                          timezone: "UTC"
+                        }
+                      },
+                      3
+                    ]
+                  },
+                  then: "Wed"
+                },
+                {
+                  case: {
+                    $eq: [
+                      {
+                        $isoDayOfWeek: {
+                          date: "$days.letDate",
+                          timezone: "UTC"
+                        }
+                      },
+                      4
+                    ]
+                  },
+                  then: "Thu"
+                },
+                {
+                  case: {
+                    $eq: [
+                      {
+                        $isoDayOfWeek: {
+                          date: "$days.letDate",
+                          timezone: "UTC"
+                        }
+                      },
+                      5
+                    ]
+                  },
+                  then: "Fri"
+                },
+                {
+                  case: {
+                    $eq: [
+                      {
+                        $isoDayOfWeek: {
+                          date: "$days.letDate",
+                          timezone: "UTC"
+                        }
+                      },
+                      6
+                    ]
+                  },
+                  then: "Sat"
+                },
+                {
+                  case: {
+                    $eq: [
+                      {
+                        $isoDayOfWeek: {
+                          date: "$days.letDate",
+                          timezone: "UTC"
+                        }
+                      },
+                      7
+                    ]
+                  },
+                  then: "Sun"
+                }
+              ],
+              default: ""
+            }
+          },
+          stats: 1
+        }
+      },
+      {
+        // Step 7: Cross-reference our generated dates with actual database stats
+        $project: {
+          _id: 0,
+          date: "$dateStr",
+          day: "$dayName",
+          clicks: {
+            $let: {
+              vars: {
+                matchedDay: {
+                  $filter: {
+                    input: "$stats",
+                    cond: {
+                      $eq: [
+                        "$$this.dateStr",
+                        "$dateStr"
+                      ]
+                    }
+                  }
+                }
+              },
+              in: {
+                $ifNull: [
+                  {
+                    $arrayElemAt: [
+                      "$$matchedDay.clicks",
+                      0
+                    ]
+                  },
+                  0
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        // Step 8: Sort chronologically (oldest day to today)
+        $sort: { date: 1 }
+      }
+    ])
+
+    return data
+
+  }
+  async last30Days(owner: Types.ObjectId) {
+    const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
+
+    const data = await this.clickModel.aggregate([
+      {
+        // Step 1: Match records from exactly 30 days ago up until right now
+        $match: {
+          owner: ownerObjectId,
+          $expr: {
+            $and: [
+              {
+                $gte: [
+                  "$createdAt",
+                  {
+                    $dateSubtract: {
+                      startDate: { $dateTrunc: { date: "$$NOW", unit: "day", timezone: "UTC" } },
+                      amount: 29,
+                      unit: "day"
+                    }
+                  }
+                ]
+              },
+              {
+                $lte: ["$createdAt", "$$NOW"]
+              }
+            ]
+          }
+        }
+      },
+      {
+        // Step 2: Group by a clean, midnight-truncated Date object
+        $group: {
+          _id: { $dateTrunc: { date: "$createdAt", unit: "day", timezone: "UTC" } },
+          clicks: { $sum: 1 }
+        }
+      },
+      {
+        // Step 3: Collect data and get today's midnight anchor
+        $group: {
+          _id: null,
+          todayMidnight: {
+            $first: {
+              $dateTrunc: { date: "$$NOW", unit: "day", timezone: "UTC" }
+            }
+          },
+          stats: { $push: { rawDate: "$_id", clicks: "$clicks" } }
+        }
+      },
+      {
+        // Step 4: Dynamically generate the 30 raw Date objects [0, -1, ..., -29]
+        $project: {
+          _id: 0,
+          days: {
+            $map: {
+              input: { $range: [0, -30, -1] },
+              as: "offset",
+              in: {
+                $dateAdd: {
+                  startDate: "$todayMidnight",
+                  unit: "day",
+                  amount: "$$offset",
+                  timezone: "UTC"
+                }
+              }
+            }
+          },
+          stats: 1
+        }
+      },
+      {
+        // Step 5: Unwind the generated dates
+        $unwind: "$days"
+      },
+      {
+        // Step 6: Strict Date object matching and final string formatting
+        $project: {
+          _id: 0,
+          date: {
+            $dateToString: { format: "%Y-%m-%d", date: "$days", timezone: "UTC" }
+          },
+          clicks: {
+            $let: {
+              vars: {
+                matchedDay: {
+                  $filter: {
+                    input: "$stats",
+                    cond: { $eq: ["$$this.rawDate", "$days"] }
+                  }
+                }
+              },
+              in: {
+                $ifNull: [
+                  { $arrayElemAt: ["$$matchedDay.clicks", 0] },
+                  0
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        // Step 7: Sort oldest day to today
+        $sort: { date: 1 }
+      }
+    ])
+
+    return data;
+  }
+  async getUniqueVisitor(owner: Types.ObjectId) {
+    const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
+
+    const visitor = await this.clickModel.distinct(
+      "visitorId",
+      { owner: ownerObjectId }
+    )
+
+    // const visitor = await this.clickModel.aggregate([
+    //   {
+    //     $match: { owner: ownerObjectId }
+    //   },
+    //   {
+    //     $group: {
+    //       _id: null,
+    //       totalClicks: {
+    //         $sum: 1
+    //       },
+    //       visitors: {
+    //         $addToSet:
+    //           "$visitorId"
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $project: {
+    //       totalClicks: 1,
+    //       uniqueVisitors: {
+    //         $size: "$visitors"
+    //       }
+    //     }
+    //   }
+    // ])
+
+    return { visitor: visitor.length }
+  }
+
+
+  async track(url: any, req: any, visitorId: string | undefined) {
 
     try {
       const ip = this.getIp(req)
@@ -410,11 +905,13 @@ export class ClicksService {
       const clickDto = {
         owner: url.owner_id,
         url: url._id,
+        visitorId,
         ip,
         country: geoData.country,
         city: geoData.city,
         device: client.device_type,
-        browser: client.browser
+        browser: client.browser,
+        os: client.os
       };
 
       await this.create(clickDto);

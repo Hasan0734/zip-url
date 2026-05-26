@@ -178,7 +178,7 @@ export class UrlsService {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const [total, activeLinks, todayCreated, last24HoursAgo, clickStats, last24HoursClicksStats, topCountries, devices, weekData] = await Promise.all([
+    const [total, activeLinks, todayCreated, last24HoursAgo, clickStats, last24HoursClicksStats, visitor] = await Promise.all([
       this.urlModel.countDocuments({ owner_id }),
       this.urlModel.countDocuments({ owner_id, is_active: true }),
       this.urlModel.countDocuments({ owner_id, createdAt: { $gte: startOfToday } }),
@@ -192,12 +192,7 @@ export class UrlsService {
         { $group: { _id: null, total: { $sum: "$click_count" } } }
       ]
       ),
-
-      await this.clicksService.getToCountries(owner_id),
-      await this.clicksService.getAllDevices(owner_id),
-      await this.clicksService.getAllUrlWeekData(owner_id)
-
-
+      this.clicksService.getUniqueVisitor(owner_id)
     ])
 
     const totalClicks = clickStats[0]?.total || 0;
@@ -219,9 +214,7 @@ export class UrlsService {
       last24HoursAgo,
       totalClicks,
       last24HoursClicks,
-      topCountries,
-      devices,
-      weekData
+      ...visitor
     };
   }
 }

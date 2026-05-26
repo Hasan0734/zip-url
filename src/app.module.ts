@@ -14,7 +14,6 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { createKeyv } from '@keyv/redis';
 import { MailModule } from './mail/mail.module';
 import { ResendModule } from './resend/resend.module';
-import { AnalyticsService } from './analytics/analytics.service';
 import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
@@ -36,29 +35,28 @@ import { AnalyticsModule } from './analytics/analytics.module';
       stores: [createKeyv(process.env.REDIS_STORE)]
     }),
     AuthModule,
+    AnalyticsModule,
     RouterModule.register([
       {
         path: 'api',
         children: [
           AuthModule,
           UrlsModule,
-          ClicksModule,
           UserModule,
+          AnalyticsModule,
+
         ]
       }
     ]),
-
-
-
+    ClicksModule,
     MailModule,
     RedirectModule,
-    ResendModule,
-    AnalyticsModule,
+    ResendModule
   ],
   controllers: [AppController],
   providers: [AppService, {
     provide: APP_GUARD,
     useClass: ThrottlerGuard,
-  }, AnalyticsService,],
+  }],
 })
 export class AppModule { }

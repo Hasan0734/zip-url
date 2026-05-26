@@ -164,6 +164,25 @@ export class UrlsController {
   @Post('/verify/:short_code')
   // @UseInterceptors(CacheInterceptor)
   async verifyUrlPassword(@Param('short_code') short_code: string, @Body() body, @Res() res, @Req() req) {
+    let visitorId =
+      req.cookies.visitorId;
+
+    if (!visitorId) {
+
+      visitorId =
+        crypto.randomUUID();
+
+      res.cookie(
+        "visitorId",
+        visitorId,
+        {
+          maxAge: 1000 * 60 * 60 * 24 * 365,
+          httpOnly: true,
+          sameSite: "lax",
+          secure: true
+        }
+      );
+    }
 
     if (!body?.password) {
       return res.send({
@@ -184,7 +203,7 @@ export class UrlsController {
     }
 
     setImmediate(() => {
-      this.clicksService.track(url, req);
+      this.clicksService.track(url, req, visitorId);
     });
 
     return res.send({ success: true, url: url.original_url });

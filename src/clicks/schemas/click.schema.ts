@@ -9,26 +9,38 @@ export type ClickDocument = HydratedDocument<Click>;
 @Schema({ timestamps: true })
 export class Click {
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Url" })
-    url: Url
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Url", required: true, index: true })
+    url!: Url
+
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User", index: true, required: true })
+    owner!: User;
+
+    // persistent identity
+    @Prop({
+        required: true,
+        index: true
+    })
+    visitorId!: string;
 
     @Prop()
-    ip: string;
+    ip!: string;
 
     @Prop()
-    country: string;
+    country!: string;
 
     @Prop()
-    city: string;
+    city!: string;
 
     @Prop()
-    device: string;
+    device!: string;
 
     @Prop()
-    browser: string;
+    browser!: string;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
-    owner: User;
+    @Prop()
+    os!: string;
+
+
 
 }
 

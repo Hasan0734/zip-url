@@ -8,12 +8,12 @@ export class ClicksController {
 
 
 
-  @Get('/all-devices')
-  @UseGuards(AuthGuard)
-  findAll(@Request() req) {
-    const owner_id = req.user.sub
-    return this.clicksService.getAllDevices(owner_id);
-  }
+  // @Get('/all-devices')
+  // @UseGuards(AuthGuard)
+  // findAll(@Request() req) {
+  //   const owner_id = req.user.sub
+  //   return this.clicksService.getAllDevices(owner_id);
+  // }
 
   // @Get(':id')
   // findOne(@Param('id') id: string) {
