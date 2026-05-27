@@ -6,12 +6,12 @@ import { AuthGuard } from "src/auth/guard/auth.guard";
 export class AnalyticsController {
     constructor(private readonly analyticsService: AnalyticsService) { }
 
-    @Get()
-    @UseGuards(AuthGuard)
-    findAll(@Request() req) {
-      const owner_id = req.user.sub
-      return this.analyticsService.getAnalytics(owner_id);
-    }
+    // @Get()
+    // @UseGuards(AuthGuard)
+    // findAll(@Request() req) {
+    //   const owner_id = req.user.sub
+    //   return this.analyticsService.getAnalytics(owner_id);
+    // }
 
 
 

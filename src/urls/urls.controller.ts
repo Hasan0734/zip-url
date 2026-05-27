@@ -15,6 +15,7 @@ import { EmailVerifiedGuard } from 'src/auth/guard/email-verified.guard';
 import { RequireVerified } from 'src/auth/decorator/require-verified.decorator';
 import { CustomAliasDto } from './dto/custom-alias.dto';
 import { Throttle } from '@nestjs/throttler';
+import { Types, ObjectId } from 'mongoose';
 
 const MAX_LIMIT = 50;
 const DEFAULT_LIMIT = 20;
@@ -222,6 +223,14 @@ export class UrlsController {
     const owner_id = req.user.sub
 
     return this.urlsService.getStaticSummary(owner_id)
+  }
+
+  @Get("analytics/:id")
+  async getAnalytics(@Request() req, @Param('id') id: Types.ObjectId) {
+    const owner_id = new Types.ObjectId("69e6d4a308cbcdc4acdb2f2d")
+
+    const result = await this.urlsService.getAnalytics(owner_id, id);
+    return result;
   }
 
 }

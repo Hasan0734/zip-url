@@ -10,7 +10,7 @@ export class AnalyticsService {
     async getAnalytics(owner_id: Types.ObjectId) {
 
         try {
-            const [topCountries, device, WeeklyData, last7DaysAgo, last30Days] = await Promise.all([
+            const [topCountries, devices, WeeklyData, last7DaysAgo, last30Days] = await Promise.all([
                 await this.clicksService.getToCountries(owner_id),
                 await this.clicksService.getAllDevices(owner_id),
                 await this.clicksService.getAllUrlWeekData(owner_id),
@@ -18,7 +18,7 @@ export class AnalyticsService {
                 await this.clicksService.last30Days(owner_id)
 
             ])
-            return { topCountries, device, ...WeeklyData, last7DaysAgo, last30Days }
+            return { topCountries, devices, ...WeeklyData, last7DaysAgo, last30Days }
         } catch (error) {
             throw error;
         }

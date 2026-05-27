@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, Inject, } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, Inject, Type, } from '@nestjs/common';
 import { CreateUrlDto } from './dto/create-url.dto';
 import { UpdateUrlDto } from './dto/update-url.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -197,16 +197,6 @@ export class UrlsService {
 
     const totalClicks = clickStats[0]?.total || 0;
     const last24HoursClicks = last24HoursClicksStats[0]?.total || 0;
-
-
-
-
-
-    // const total = await this.urlModel.countDocuments({ owner_id })
-    // const activeLinks = await this.urlModel.countDocuments({ owner_id, is_active: true })
-    // const todayCreated = await this.urlModel.countDocuments({ owner_id, createdAt: { $gte: startOfToday } })
-    // const last24HoursAgo = await this.urlModel.countDocuments({ owner_id, createdAt: { $gte: twentyFourHoursAgo } })
-
     return {
       total,
       activeLinks,
@@ -216,5 +206,17 @@ export class UrlsService {
       last24HoursClicks,
       ...visitor
     };
+  }
+
+  async getAnalytics(owner_id: Types.ObjectId, _id: Types.ObjectId) {
+    const [WeeklyData, topCountries, devices, last7DaysAgo, last30Days] = await Promise.all([
+      await this.clicksService.getAllUrlWeekData(owner_id, _id),
+      await this.clicksService.getToCountries(owner_id, _id),
+      await this.clicksService.getAllDevices(owner_id, _id),
+      await this.clicksService.last7DaysAgo(owner_id, _id),
+      await this.clicksService.last30Days(owner_id, _id)
+
+    ])
+    return { topCountries, devices, ...WeeklyData, last7DaysAgo, last30Days }
   }
 }
