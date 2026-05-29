@@ -66,9 +66,6 @@ export class UrlsService {
     }
   }
 
-  async findOne(id: number) {
-    return `This action returns a #${id} url`;
-  }
 
   async findUrlByCode(short_code: string) {
     try {
@@ -95,10 +92,10 @@ export class UrlsService {
     }
   }
 
-  async update(_id: string, updateUrlDto: UpdateUrlDto) {
+  async update(_id: string, updateUrlDto: UpdateUrlDto, owner_id:Types.ObjectId) {
 
     try {
-      const updated = await this.urlModel.findOneAndUpdate({ _id }, updateUrlDto, {
+      const updated = await this.urlModel.findOneAndUpdate({ _id, owner_id }, updateUrlDto, {
         returnDocument: 'after'
       })
       if (!updated) {
@@ -118,10 +115,10 @@ export class UrlsService {
     }
   }
 
-  async remove(_id: string) {
+  async remove(_id: string, owner_id:Types.ObjectId) {
 
     try {
-      const url = await this.urlModel.findOneAndDelete({ _id });
+      const url = await this.urlModel.findOneAndDelete({ _id, owner_id });
       const shortCodeKey = `short:${url.short_code}`;
       await this.cache.del(shortCodeKey);
 
@@ -204,19 +201,30 @@ export class UrlsService {
       last24HoursAgo,
       totalClicks,
       last24HoursClicks,
-      ...visitor
+      visitor
     };
   }
 
   async getAnalytics(owner_id: Types.ObjectId, _id: Types.ObjectId) {
-    const [WeeklyData, topCountries, devices, last7DaysAgo, last30Days] = await Promise.all([
-      await this.clicksService.getAllUrlWeekData(owner_id, _id),
-      await this.clicksService.getToCountries(owner_id, _id),
-      await this.clicksService.getAllDevices(owner_id, _id),
-      await this.clicksService.last7DaysAgo(owner_id, _id),
-      await this.clicksService.last30Days(owner_id, _id)
+
+    const urlId = typeof _id === "string" ? new Types.ObjectId(_id) : _id
+
+
+    const [WeeklyData, topCountries, devices, last7DaysAgo, last30Days, visitor, clickStats] = await Promise.all([
+      this.clicksService.getAllUrlWeekData(owner_id, _id),
+      this.clicksService.getToCountries(owner_id, _id),
+      this.clicksService.getAllDevices(owner_id, _id),
+      this.clicksService.last7DaysAgo(owner_id, _id),
+      this.clicksService.last30Days(owner_id, _id),
+      this.clicksService.getUniqueVisitor(owner_id, _id),
+      this.urlModel.aggregate([
+        { $match: { owner_id, _id: urlId } },
+        { $group: { _id: null, total: { $sum: "$click_count" } } }
+      ]),
 
     ])
-    return { topCountries, devices, ...WeeklyData, last7DaysAgo, last30Days }
+
+    const totalClicks = clickStats[0]?.total || 0;
+    return { topCountries, devices, ...WeeklyData, last7DaysAgo, last30Days, visitor, totalClicks }
   }
 }

@@ -144,22 +144,25 @@ export class UrlsController {
     return await this.urlsService.findAll({ ...filters, owner_id }, queryOption);
   }
 
-  @Get(':id')
-  @UseGuards(AuthGuard)
-  async findOne(@Param('id') id: string) {
-    return await this.urlsService.findOne(+id);
-  }
+  // @Get(':id')
+  // @UseGuards(AuthGuard)
+  // async findOne(@Param('id') id: string, @Request() req) {
+  //   const userId = req.user.sub
+  //   return await this.urlsService.findOne(id);
+  // }
 
   @Patch(':id')
   @UseGuards(AuthGuard)
-  async update(@Param('id') id: string, @Body() updateUrlDto: UpdateUrlDto) {
-    return await this.urlsService.update(id, updateUrlDto);
+  async update(@Param('id') id: string, @Body() updateUrlDto: UpdateUrlDto, @Request() req) {
+    const userId = req.user.sub
+    return await this.urlsService.update(id, updateUrlDto, userId);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  remove(@Param('id') id: string) {
-    return this.urlsService.remove(id);
+  remove(@Param('id') id: string, @Request() req) {
+    const userId = req.user.sub
+    return this.urlsService.remove(id, userId);
   }
 
   @Post('/verify/:short_code')
@@ -226,8 +229,9 @@ export class UrlsController {
   }
 
   @Get("analytics/:id")
+  @UseGuards(AuthGuard)
   async getAnalytics(@Request() req, @Param('id') id: Types.ObjectId) {
-    const owner_id = new Types.ObjectId("69e6d4a308cbcdc4acdb2f2d")
+    const owner_id = req.user.sub
 
     const result = await this.urlsService.getAnalytics(owner_id, id);
     return result;

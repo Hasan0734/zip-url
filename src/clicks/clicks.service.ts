@@ -36,31 +36,7 @@ export class ClicksService {
     }
   }
 
-  async findOne(id: string) {
-    try {
-      const result = await this.clickModel
-        .findOne({ _id: id })
-        .populate({
-          path: 'owner',
-          select: "first_name last_name email -_id"
-        })
-        .populate({ path: 'url', select: '-createdAt -updatedAt -owner_id -__v' });
-
-      if (!result) {
-        throw new NotFoundException()
-      }
-      return result;
-    } catch (err) {
-      const error = err as { kind?: string }
-
-      if (error.kind === "ObjectId") {
-        throw new NotFoundException({ message: "Invalid _id" })
-      }
-      throw error;
-    }
-  }
-
-  async deleteByUrlId(id: Types.ObjectId) {
+  async deleteByUrlId(id: Types.ObjectId, owner_id:Types.ObjectId) {
     try {
       const url = await this.clickModel.findOneAndDelete({ id });
 
@@ -897,9 +873,14 @@ export class ClicksService {
   async getUniqueVisitor(owner: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
 
+    const find: any = { owner: ownerObjectId }
+
+    if (urlId) {
+      find.url = new Types.ObjectId(urlId)
+    }
     const visitor = await this.clickModel.distinct(
       "visitorId",
-      { owner: ownerObjectId }
+      find
     )
 
     // const visitor = await this.clickModel.aggregate([
@@ -928,7 +909,7 @@ export class ClicksService {
     //   }
     // ])
 
-    return { visitor: visitor.length }
+    return visitor.length || 0
   }
 
   async track(url: any, req: any, visitorId: string | undefined) {
