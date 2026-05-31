@@ -36,16 +36,29 @@ export class ClicksService {
     }
   }
 
-  async deleteByUrlId(id: Types.ObjectId, owner_id:Types.ObjectId) {
+  async deleteByUrlId(id: Types.ObjectId, owner_id: Types.ObjectId) {
     try {
-      const url = await this.clickModel.findOneAndDelete({ id });
+      const url = await this.clickModel.findOneAndDelete({ id, owner: owner_id });
 
       if (!url) {
         throw new NotFoundException()
       }
+
       return { message: "URL Deleted!", success: true };
     } catch (error) {
       throw error
+    }
+  }
+  async deleteAllByUrlId(_id: Types.ObjectId) {
+    try {
+      const urls = await this.clickModel.delete({ url: _id })
+
+      if (!urls.length) {
+        throw new NotFoundException("Url id not found to delte clicks.")
+      }
+      return { message: "Clicks deleted by url id", success: true }
+    } catch (error) {
+
     }
   }
 

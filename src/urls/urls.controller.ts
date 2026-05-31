@@ -16,6 +16,8 @@ import { RequireVerified } from 'src/auth/decorator/require-verified.decorator';
 import { CustomAliasDto } from './dto/custom-alias.dto';
 import { Throttle } from '@nestjs/throttler';
 import { Types, ObjectId } from 'mongoose';
+import { Roles } from 'src/auth/decorator/roles.decorator';
+import { Role } from 'src/auth/enum/role.enum';
 
 const MAX_LIMIT = 50;
 const DEFAULT_LIMIT = 20;
@@ -30,7 +32,10 @@ export class UrlsController {
   @RequireVerified()
   async create(@Body() createUrlDto: CreateUrlDto, @Request() req) {
     const userId = req.user.sub
-    return await this.urlsService.create(createUrlDto, userId);
+
+    const ownerName = `${req.user.first_name} ${req.user.last_name}`
+
+    return await this.urlsService.create(createUrlDto, userId, ownerName);
   }
 
   @Throttle({ default: { limit: 50, ttl: 60000 } })
@@ -87,59 +92,6 @@ export class UrlsController {
       })
     }
 
-    // let filters = { ...req.query };
-    // const excludeFields = ["sort", "page", "limit", "fields", "owner_id", "search"];
-    // excludeFields.forEach((field) => delete filters[field]);
-
-    // if (queries?.is_active) {
-    //   filters.is_active = JSON.parse(queries.is_active)
-    // }
-
-    // if (queries?.search) {
-    //   const searchRegex = new RegExp(queries.search, 'i');
-
-    //   filters = {
-    //     ...filters,
-    //     $or: [
-    //       { original_url: { $regex: searchRegex } },
-    //       { short_code: { $regex: searchRegex } },
-    //       { custom_alias: { $regex: searchRegex } }
-    //     ]
-    //   }
-    // }
-    // const newQueries: any = {
-    //   limit: 20,
-    //   skip: 0
-    // }
-
-    // if (queries.sort) {
-    //   const sortBy = queries.sort.split(',').join(' ');
-    //   newQueries.sortBy = sortBy;
-    // }
-    // if (queries.fields) {
-    //   const fields = queries.fields.split(',').join(' ');
-    //   newQueries.fields = fields;
-    // }
-    // if (queries.page) {
-
-    //   const page = queries.page === '0' ? 1 : queries.page;
-    //   const { limit = 10 } = queries;
-
-    //   const skip = (page - 1) * parseInt(limit);
-    //   newQueries.skip = skip;
-    //   newQueries.limit = limit
-    // }
-
-    // if (queries.limit) {
-    //   const limit = Number(queries.limit);
-
-    //   if (limit > 50) {
-    //     newQueries.limit = 50
-    //   } else {
-    //     newQueries.limit = limit
-    //   }
-    // }
-
 
     return await this.urlsService.findAll({ ...filters, owner_id }, queryOption);
   }
@@ -160,9 +112,11 @@ export class UrlsController {
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id') id: Types.ObjectId, @Request() req) {
     const userId = req.user.sub
-    return this.urlsService.remove(id, userId);
+    const isAdmin = req.user?.role === 'admin'
+
+    return this.urlsService.remove(id, userId, isAdmin);
   }
 
   @Post('/verify/:short_code')
@@ -238,3 +192,131 @@ export class UrlsController {
   }
 
 }
+
+
+@Controller('admin/urls')
+export class AdminUrlsController {
+  constructor(private readonly urlsService: UrlsService,
+    private clicksService: ClicksService,) { }
+
+  @Throttle({ default: { limit: 50, ttl: 60000 } })
+  @Get()
+  @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
+  async findAll(@Query() queries) {
+
+    const {
+      sort,
+      page = "1",
+      limit,
+      fields,
+      search,
+      is_active,
+    } = queries;
+
+    const filters: any = Object.fromEntries(Object.entries(queries).filter(([key]) => !["sort", "page", "limit", "fields", "search", "owner_id"].includes(key)))
+
+
+    if (is_active !== undefined) {
+      filters.is_active = JSON.parse(is_active as string)
+    }
+
+    if (search) {
+      const searchRegex = new RegExp(queries.search, 'i');
+
+      filters.$or = [
+        { original_url: { $regex: searchRegex } },
+        { short_code: { $regex: searchRegex } },
+        { custom_alias: { $regex: searchRegex } },
+        { owner_name: { $regex: searchRegex } }
+      ]
+    }
+
+    const parsedLimit = Math.min(
+      Number(limit) || DEFAULT_LIMIT,
+      MAX_LIMIT
+    );
+
+    const parsedPage = Math.max(
+      Number(page) || 1,
+      1
+    );
+
+    const queryOption = {
+      limit: parsedLimit,
+      skip: (parsedPage - 1) * parsedLimit,
+      ...(sort && {
+        sortBy: (sort as string).split(",").join(" ")
+      }),
+      ...(fields && {
+        fields: (fields as string).split(',').join(" ")
+      })
+    }
+
+    const urlPopulate = {
+      populateName: "owner_id",
+      populateSelect: "first_name last_name"
+    }
+
+    return await this.urlsService.findAll({ ...filters }, queryOption);
+  }
+
+}
+
+
+
+
+// filter and queries
+
+// let filters = { ...req.query };
+// const excludeFields = ["sort", "page", "limit", "fields", "owner_id", "search"];
+// excludeFields.forEach((field) => delete filters[field]);
+
+// if (queries?.is_active) {
+//   filters.is_active = JSON.parse(queries.is_active)
+// }
+
+// if (queries?.search) {
+//   const searchRegex = new RegExp(queries.search, 'i');
+
+//   filters = {
+//     ...filters,
+//     $or: [
+//       { original_url: { $regex: searchRegex } },
+//       { short_code: { $regex: searchRegex } },
+//       { custom_alias: { $regex: searchRegex } }
+//     ]
+//   }
+// }
+// const newQueries: any = {
+//   limit: 20,
+//   skip: 0
+// }
+
+// if (queries.sort) {
+//   const sortBy = queries.sort.split(',').join(' ');
+//   newQueries.sortBy = sortBy;
+// }
+// if (queries.fields) {
+//   const fields = queries.fields.split(',').join(' ');
+//   newQueries.fields = fields;
+// }
+// if (queries.page) {
+
+//   const page = queries.page === '0' ? 1 : queries.page;
+//   const { limit = 10 } = queries;
+
+//   const skip = (page - 1) * parseInt(limit);
+//   newQueries.skip = skip;
+//   newQueries.limit = limit
+// }
+
+// if (queries.limit) {
+//   const limit = Number(queries.limit);
+
+//   if (limit > 50) {
+//     newQueries.limit = 50
+//   } else {
+//     newQueries.limit = limit
+//   }
+// }

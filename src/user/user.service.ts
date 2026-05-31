@@ -5,6 +5,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { UpdateUserDto } from 'src/auth/dto/update-user.dto';
+import { QueryTypes } from 'src/common/types';
+
 
 
 @Injectable()
@@ -24,12 +26,26 @@ export class UserService {
       throw error;
     }
   }
-  async findAll() {
-    try {
-      const users = await this.userModel.find().select("-password").exec();
-      const total = await this.userModel.countDocuments()
+  async findAll(filter: any, queries: QueryTypes) {
 
-      return {users, total};
+    let fields = "-password "
+
+    if (queries.fields) {
+      fields = fields + queries.fields
+    }
+
+
+    try {
+      const users = await this.userModel.find(filter)
+        .skip(queries.skip)
+        .limit(queries.limit)
+        .select(fields)
+        .sort(queries.sortBy)
+        .exec();
+      const total = await this.userModel.find(filter).countDocuments()
+      const page = Math.ceil(total / queries.limit)
+
+      return { users, total, page, limit: queries.limit };
     } catch (error) {
       throw error;
     }

@@ -8,13 +8,12 @@ import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CustomAliasDto } from './dto/custom-alias.dto';
 import { Types } from 'mongoose';
 import { ClicksService } from 'src/clicks/clicks.service';
+import { QueryTypes } from 'src/common/types';
 
 
-type QueryTypes = {
-  limit: number;
-  sortBy: string;
-  fields: string;
-  skip: number;
+type PopulateUrl = {
+  populateName: string,
+  populateSelect: string
 }
 
 @Injectable()
@@ -22,10 +21,10 @@ export class UrlsService {
 
   constructor(@InjectModel(Url.name) private urlModel, private clicksService: ClicksService, @Inject(CACHE_MANAGER) private cache: Cache) { }
 
-  async create(createUrlDto: CreateUrlDto, owner_id: string) {
+  async create(createUrlDto: CreateUrlDto, owner_id: string, owner_name: string) {
     const short_code = nanoid(8)
     try {
-      const res = await this.urlModel.create({ ...createUrlDto, short_code, owner_id });
+      const res = await this.urlModel.create({ ...createUrlDto, short_code, owner_id, owner_name });
       return {
         success: true,
         message: "Added new url successfully",
@@ -43,14 +42,16 @@ export class UrlsService {
     }
   }
 
-  async findAll(filters: any, queries: QueryTypes) {
+  async findAll(filters: any, queries: QueryTypes, populate?: PopulateUrl) {
 
     try {
       const urls = await this.urlModel.find(filters)
         .skip(queries.skip)
         .limit(queries.limit)
         .select(queries.fields)
-        .sort(queries.sortBy);
+        .sort(queries.sortBy)
+        .populate(populate?.populateName, populate?.populateSelect)
+        .exec()
 
       const total = await this.urlModel.find(filters).countDocuments();
       const page = Math.ceil(total / queries.limit)
@@ -92,7 +93,7 @@ export class UrlsService {
     }
   }
 
-  async update(_id: string, updateUrlDto: UpdateUrlDto, owner_id:Types.ObjectId) {
+  async update(_id: string, updateUrlDto: UpdateUrlDto, owner_id: Types.ObjectId) {
 
     try {
       const updated = await this.urlModel.findOneAndUpdate({ _id, owner_id }, updateUrlDto, {
@@ -115,10 +116,17 @@ export class UrlsService {
     }
   }
 
-  async remove(_id: string, owner_id:Types.ObjectId) {
+  async remove(_id: Types.ObjectId, owner_id: Types.ObjectId, isAdmin: boolean) {
+
+    let filter: any = {}
+
+    if (!isAdmin) {
+      filter.owner_id = owner_id
+    }
+
 
     try {
-      const url = await this.urlModel.findOneAndDelete({ _id, owner_id });
+      const url = await this.urlModel.findOneAndDelete({ _id, ...filter });
       const shortCodeKey = `short:${url.short_code}`;
       await this.cache.del(shortCodeKey);
 
@@ -130,6 +138,9 @@ export class UrlsService {
       if (!url) {
         throw new NotFoundException()
       }
+
+      await this.clicksService.deleteAllByUrlId(_id)
+
       return { message: "URL Deleted!", success: true };
     } catch (error) {
       throw error
@@ -208,7 +219,6 @@ export class UrlsService {
   async getAnalytics(owner_id: Types.ObjectId, _id: Types.ObjectId) {
 
     const urlId = typeof _id === "string" ? new Types.ObjectId(_id) : _id
-
 
     const [WeeklyData, topCountries, devices, last7DaysAgo, last30Days, visitor, clickStats] = await Promise.all([
       this.clicksService.getAllUrlWeekData(owner_id, _id),

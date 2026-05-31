@@ -28,7 +28,8 @@ export class Url {
 
     @Prop({ type: Types.ObjectId, ref: "User" })
     owner_id!: Types.ObjectId;
-
+    @Prop({ required: true })
+    owner_name!: string
 }
 
 
