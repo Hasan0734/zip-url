@@ -41,6 +41,7 @@ export class UserService {
         .limit(queries.limit)
         .select(fields)
         .sort(queries.sortBy)
+        .populate("totalLink")
         .exec();
       const total = await this.userModel.find(filter).countDocuments()
       const page = Math.ceil(total / queries.limit)
@@ -97,5 +98,80 @@ export class UserService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async getUsersStats() {
+
+    const [stats] = await Promise.all([
+      this.userModel.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalUsers: { $sum: 1 },
+            verifiedUsers: {
+              $sum: {
+                $cond: [
+                  { $eq: ["$is_verified", true] },
+                  1,
+                  0
+                ]
+              }
+            },
+            notVerifiedUsers: {
+              $sum: {
+                $cond: [
+                  { $eq: ["$is_verified", false] },
+                  1,
+                  0
+                ]
+              }
+            },
+            activeUsers: {
+              $sum: {
+                $cond: [
+                  { $eq: ["$status", "active"] },
+                  1,
+                  0
+                ]
+              }
+            },
+            pendingUsers: {
+              $sum: {
+                $cond: [
+                  { $eq: ["$status", "pending"] },
+                  1,
+                  0
+                ]
+              }
+            },
+            blockedUsers: {
+              $sum: {
+                $cond: [
+                  { $eq: ["$status", "block"] },
+                  1,
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            totalUsers: 1,
+            verifiedUsers: 1,
+            notVerifiedUsers: 1,
+            activeUsers: 1,
+            pendingUsers: 1,
+            blockedUsers: 1
+          }
+        }
+      ]),
+    ])
+
+   const result = stats[0] || null
+
+    return result
+
   }
 }

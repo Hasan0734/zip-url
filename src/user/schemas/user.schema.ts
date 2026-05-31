@@ -1,11 +1,11 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Prop, Schema, SchemaFactory, Virtual } from "@nestjs/mongoose";
 import { HydratedDocument } from "mongoose";
 import { Role } from "src/auth/enum/role.enum";
 import { Status } from "src/auth/enum/status.enum";
 
 export type UserDocument = HydratedDocument<User>;
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } })
 export class User {
     @Prop({ required: true, trim: true })
     first_name!: string;
@@ -31,6 +31,27 @@ export class User {
     @Prop({ default: Status.PENDING })
     status!: string
 
+    @Virtual({
+        options: {
+            ref: "Url",
+            localField: "_id",
+            foreignField: "owner_id",
+            count: true
+        }
+    })
+    totalLink!: number
+
 }
 
+
+
 export const UserSchema = SchemaFactory.createForClass(User)
+
+
+
+// UserSchema.virtual('totalLink', {
+//     ref: 'Url',            // Make sure this matches the string name of your Url model exactly
+//     localField: '_id',
+//     foreignField: 'owner_id',
+//     count: true            // Tells Mongoose to return an integer count instead of an array
+// });

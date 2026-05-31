@@ -66,5 +66,9 @@ export class UsersController {
         return await this.userService.findAll(filters, queryOption)
     }
 
-
+    @Get("/stats/summary")
+    @Roles(Role.Admin)
+    async getUsersStats() {
+        return await this.userService.getUsersStats()
+    }
 }
