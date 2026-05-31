@@ -1,11 +1,13 @@
+import { UrlsService } from 'src/urls/urls.service';
 import { ClicksService } from 'src/clicks/clicks.service';
 import { Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AnalyticsService {
 
-    constructor(private clicksService: ClicksService) { }
+    constructor(private clicksService: ClicksService, private userService: UserService, private urlsService: UrlsService) { }
 
     async getAnalytics(owner_id: Types.ObjectId) {
 
@@ -19,6 +21,22 @@ export class AnalyticsService {
 
             ])
             return { topCountries, devices, ...WeeklyData, last7DaysAgo, last30Days }
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getStats() {
+        try {
+            const [urlStats, userStats] = await Promise.all([
+                this.urlsService.getStatsByAdmin(),
+                this.userService.getUsersStats()
+            ])
+
+            return {
+                ...urlStats,
+                totalUser: userStats.totalUsers
+            }
         } catch (error) {
             throw error;
         }

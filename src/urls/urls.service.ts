@@ -67,7 +67,6 @@ export class UrlsService {
     }
   }
 
-
   async findUrlByCode(short_code: string) {
     try {
       const shortCodeKey = `short:${short_code}`;
@@ -178,7 +177,7 @@ export class UrlsService {
     }
   }
 
-  async getStaticSummary(owner_id: Types.ObjectId) {
+  async getStatsSummary(owner_id: Types.ObjectId) {
 
     //  await new Promise((r) => setTimeout(r, 5000))
 
@@ -236,5 +235,47 @@ export class UrlsService {
 
     const totalClicks = clickStats[0]?.total || 0;
     return { topCountries, devices, ...WeeklyData, last7DaysAgo, last30Days, visitor, totalClicks }
+  }
+
+  async getStatsByAdmin() {
+    const [urlData] = await Promise.all([
+      this.urlModel.aggregate([
+        {
+          $group: {
+            _id: null,
+            activeUrls: {
+              $sum: { $cond: ["$is_active", 1, 0] }
+            },
+            todayCreatedUrls: {
+              $sum: {
+                $cond: [
+                  {
+                    $gte: [
+                      "$createdAt",
+                      {
+                        $dateTrunc: {
+                          date: "$$NOW",
+                          unit: "day"
+                        }
+                      }
+                    ]
+                  },
+                  1,
+                  0
+                ]
+              }
+            },
+            totalUrls: { $sum: 1 },
+            totalClicks: {$sum: "$click_count"}
+          }
+        },
+        { $project: { _id: 0 } }
+      ])
+     
+    ])
+
+    const result = urlData[0] || null
+
+    return result
   }
 }

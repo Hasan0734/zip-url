@@ -179,14 +179,13 @@ export class UrlsController {
   async getStats(@Request() req) {
     const owner_id = req.user.sub
 
-    return this.urlsService.getStaticSummary(owner_id)
+    return this.urlsService.getStatsSummary(owner_id)
   }
 
   @Get("analytics/:id")
   @UseGuards(AuthGuard)
   async getAnalytics(@Request() req, @Param('id') id: Types.ObjectId) {
     const owner_id = req.user.sub
-
     const result = await this.urlsService.getAnalytics(owner_id, id);
     return result;
   }
@@ -261,6 +260,14 @@ export class AdminUrlsController {
     return await this.urlsService.findAll({ ...filters }, queryOption);
   }
 
+
+  @Get("stats/summary")
+  @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
+  async getStatsByAdmin() {
+
+    return this.urlsService.getStatsByAdmin()
+  }
 }
 
 

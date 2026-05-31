@@ -350,7 +350,7 @@ export class ClicksService {
                       date: "$$NOW",
                       unit: "week",
                       startOfWeek: "Mon",
-                      timezone: "+06:00"
+                      timezone: "UTC"
                     }
                   }
                 ]
@@ -896,33 +896,11 @@ export class ClicksService {
       find
     )
 
-    // const visitor = await this.clickModel.aggregate([
-    //   {
-    //     $match: { owner: ownerObjectId }
-    //   },
-    //   {
-    //     $group: {
-    //       _id: null,
-    //       totalClicks: {
-    //         $sum: 1
-    //       },
-    //       visitors: {
-    //         $addToSet:
-    //           "$visitorId"
-    //       }
-    //     }
-    //   },
-    //   {
-    //     $project: {
-    //       totalClicks: 1,
-    //       uniqueVisitors: {
-    //         $size: "$visitors"
-    //       }
-    //     }
-    //   }
-    // ])
-
     return visitor.length || 0
+  }
+
+  async getTotalClicks() {
+    return await this.clickModel.countDocuments().exec()
   }
 
   async track(url: any, req: any, visitorId: string | undefined) {
