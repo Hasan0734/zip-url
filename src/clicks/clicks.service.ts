@@ -62,17 +62,16 @@ export class ClicksService {
     }
   }
 
-  async getToCountries(owner: Types.ObjectId, urlId?: Types.ObjectId) {
-
+  async getToCountries(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
-
-    const matchQuery: any = {
-      owner: ownerObjectId,
-    }
-
+    const matchQuery: any = {}
     if (urlId) {
       matchQuery.url = new Types.ObjectId(urlId)
     }
+    if (owner) {
+      matchQuery.owner = ownerObjectId
+    }
+
     try {
       const data = await this.clickModel.aggregate([
         {
@@ -129,19 +128,18 @@ export class ClicksService {
 
   }
 
-  async getAllDevices(owner: Types.ObjectId, urlId?: Types.ObjectId) {
+  async getAllDevices(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
 
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
-
-    const matchQuery: any = {
-      owner: ownerObjectId,
-    }
-
+    const matchQuery: any = {}
     if (urlId) {
       matchQuery.url = new Types.ObjectId(urlId)
     }
-    try {
+    if (owner) {
+      matchQuery.owner = ownerObjectId
+    }
 
+    try {
       const data = await this.clickModel.aggregate([
         {
           $match: matchQuery
@@ -197,18 +195,17 @@ export class ClicksService {
 
   }
 
-  async getAllUrlWeekData(owner: Types.ObjectId, urlId?: Types.ObjectId) {
-
-
+  async getAllUrlWeekData(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     try {
       const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
 
-      const matchQuery: any = {
-        owner: ownerObjectId,
-      }
+      const matchQuery: any = {}
 
       if (urlId) {
         matchQuery.url = new Types.ObjectId(urlId)
+      }
+      if (owner) {
+        matchQuery.owner = ownerObjectId
       }
 
       const [previousWeek, currentWeek] = await Promise.all([
@@ -491,17 +488,15 @@ export class ClicksService {
     }
   }
 
-  async last7DaysAgo(owner: Types.ObjectId, urlId?: Types.ObjectId) {
+  async last7DaysAgo(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
-
-    const matchQuery: any = {
-      owner: ownerObjectId,
-    }
-
+    const matchQuery: any = {}
     if (urlId) {
       matchQuery.url = new Types.ObjectId(urlId)
     }
-
+    if (owner) {
+      matchQuery.owner = ownerObjectId
+    }
     try {
       const data = await this.clickModel.aggregate([
         {
@@ -763,21 +758,19 @@ export class ClicksService {
     }
 
   }
-  async last30Days(owner: Types.ObjectId, urlId?: Types.ObjectId) {
+  async last30Days(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
-
-    const matchQuery: any = {
-      owner: ownerObjectId,
-    }
-
+    const matchQuery: any = {}
     if (urlId) {
       matchQuery.url = new Types.ObjectId(urlId)
+    }
+    if (owner) {
+      matchQuery.owner = ownerObjectId
     }
 
     try {
       const data = await this.clickModel.aggregate([
         {
-          // Step 1: Match records from exactly 30 days ago up until right now
           $match: {
             ...matchQuery,
             $expr: {
@@ -883,19 +876,19 @@ export class ClicksService {
       throw error;
     }
   }
-  async getUniqueVisitor(owner: Types.ObjectId, urlId?: Types.ObjectId) {
+  async getUniqueVisitor(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
-
-    const find: any = { owner: ownerObjectId }
-
+    const find: any = {}
     if (urlId) {
       find.url = new Types.ObjectId(urlId)
+    }
+    if (owner) {
+      find.owner = ownerObjectId
     }
     const visitor = await this.clickModel.distinct(
       "visitorId",
       find
     )
-
     return visitor.length || 0
   }
 

@@ -179,7 +179,7 @@ export class UrlsService {
 
   async getStatsSummary(owner_id: Types.ObjectId) {
 
-    //  await new Promise((r) => setTimeout(r, 5000))
+
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const startOfToday = new Date();
@@ -215,7 +215,7 @@ export class UrlsService {
     };
   }
 
-  async getAnalytics(owner_id: Types.ObjectId, _id: Types.ObjectId) {
+  async getAnalytics(owner_id?: Types.ObjectId, _id?: Types.ObjectId) {
 
     const urlId = typeof _id === "string" ? new Types.ObjectId(_id) : _id
 
@@ -238,7 +238,7 @@ export class UrlsService {
   }
 
   async getStatsByAdmin() {
-    const [urlData] = await Promise.all([
+    const [urlData, visitor] = await Promise.all([
       this.urlModel.aggregate([
         {
           $group: {
@@ -266,16 +266,18 @@ export class UrlsService {
               }
             },
             totalUrls: { $sum: 1 },
-            totalClicks: {$sum: "$click_count"}
+            totalClicks: { $sum: "$click_count" }
           }
         },
         { $project: { _id: 0 } }
-      ])
-     
+      ]),
+
+      this.clicksService.getUniqueVisitor()
+
     ])
 
     const result = urlData[0] || null
 
-    return result
+    return {...result, visitor}
   }
 }

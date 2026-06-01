@@ -186,6 +186,11 @@ export class UrlsController {
   @UseGuards(AuthGuard)
   async getAnalytics(@Request() req, @Param('id') id: Types.ObjectId) {
     const owner_id = req.user.sub
+
+    if (req.user.role === 'admin') {
+      const result = await this.urlsService.getAnalytics(undefined, id);
+      return result;
+    }
     const result = await this.urlsService.getAnalytics(owner_id, id);
     return result;
   }
