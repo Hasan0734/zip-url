@@ -61,7 +61,6 @@ export class ClicksService {
 
     }
   }
-
   async getToCountries(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
     const matchQuery: any = {}
@@ -127,7 +126,6 @@ export class ClicksService {
     }
 
   }
-
   async getAllDevices(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
 
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
@@ -194,7 +192,6 @@ export class ClicksService {
     }
 
   }
-
   async getAllUrlWeekData(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     try {
       const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
@@ -487,7 +484,6 @@ export class ClicksService {
       throw error;
     }
   }
-
   async last7DaysAgo(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
     const matchQuery: any = {}
@@ -876,6 +872,103 @@ export class ClicksService {
       throw error;
     }
   }
+
+  async getDevicesData(day:number = 6) {
+    try {
+      const result = this.clickModel.aggregate([
+        {
+          $match: {
+            $expr: {
+              $gte: [
+                "$createdAt",
+                {
+                  $dateSubtract: {
+                    startDate: {
+                      $dateTrunc: {
+                        date: "$$NOW",
+                        unit: "day",
+                        timezone: "UTC"
+                      }
+                    },
+                    amount: day,
+                    unit: "day"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              date: {
+                $dateToString: {
+                  format: "%Y-%m-%d",
+                  date: "$createdAt"
+                }
+              }
+            },
+            desktop: {
+              $sum: {
+                $cond: [
+                  {
+                    $eq: [
+                      { $toLower: "$device" },
+                      "desktop"
+                    ]
+                  },
+                  1,
+                  0
+                ]
+              }
+            },
+            mobile: {
+              $sum: {
+                $cond: [
+                  {
+                    $eq: [
+                      { $toLower: "$device" },
+                      "mobile"
+                    ]
+                  },
+                  1,
+                  0
+                ]
+              }
+            },
+            tablet: {
+              $sum: {
+                $cond: [
+                  {
+                    $eq: [
+                      { $toLower: "$device" },
+                      "tablet"
+                    ]
+                  },
+                  1,
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            date: "$_id.date",
+            desktop: 1,
+            mobile: 1,
+            tablet: 1
+          }
+        },
+        { $sort: { date: 1 } }
+      ])
+      return result
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getUniqueVisitor(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
     const find: any = {}

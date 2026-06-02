@@ -15,7 +15,7 @@ import { EmailVerifiedGuard } from 'src/auth/guard/email-verified.guard';
 import { RequireVerified } from 'src/auth/decorator/require-verified.decorator';
 import { CustomAliasDto } from './dto/custom-alias.dto';
 import { Throttle } from '@nestjs/throttler';
-import { Types, ObjectId } from 'mongoose';
+import { Types } from 'mongoose';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { Role } from 'src/auth/enum/role.enum';
 

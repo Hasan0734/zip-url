@@ -271,13 +271,9 @@ export class UrlsService {
         },
         { $project: { _id: 0 } }
       ]),
-
       this.clicksService.getUniqueVisitor()
-
     ])
-
     const result = urlData[0] || null
-
     return {...result, visitor}
   }
 }

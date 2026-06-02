@@ -10,8 +10,12 @@ export class AnalyticsController {
 
     @Get()
     @UseGuards(AuthGuard)
-    async findAll(@Request() req) {
+    async getAnalytics(@Request() req) {
         const owner_id = req.user.sub
+        if (req.user.role === 'admin') {
+            return await this.analyticsService.getAnalytics();
+
+        }
         return await this.analyticsService.getAnalytics(owner_id);
     }
 
@@ -19,8 +23,14 @@ export class AnalyticsController {
     @UseGuards(AuthGuard)
     @Roles(Role.Admin)
     async getStats() {
-
         return await this.analyticsService.getStats()
     }
 
+
+    @Get("/clicks")
+    @UseGuards(AuthGuard)
+    @Roles(Role.Admin)
+    async getClicksAnalytics() {
+        return await this.analyticsService.getClicksAnalytics()
+    }
 }
