@@ -51,14 +51,14 @@ export class ClicksService {
   }
   async deleteAllByUrlId(_id: Types.ObjectId) {
     try {
-      const urls = await this.clickModel.delete({ url: _id })
+      const urls = await this.clickModel.deleteMany({ url: _id })
 
       if (!urls.length) {
-        throw new NotFoundException("Url id not found to delte clicks.")
+        throw new NotFoundException("Url id not found to delete clicks.")
       }
       return { message: "Clicks deleted by url id", success: true }
     } catch (error) {
-
+      throw error;
     }
   }
   async getToCountries(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
@@ -764,6 +764,8 @@ export class ClicksService {
       matchQuery.owner = ownerObjectId
     }
 
+    console.log(matchQuery)
+
     try {
       const data = await this.clickModel.aggregate([
         {
@@ -791,80 +793,26 @@ export class ClicksService {
           }
         },
         {
-          // Step 2: Group by a clean, midnight-truncated Date object
           $group: {
-            _id: { $dateTrunc: { date: "$createdAt", unit: "day", timezone: "UTC" } },
+            _id: {
+              date: {
+                $dateToString: {
+                  format: "%Y-%m-%d",
+                  date: "$createdAt"
+                }
+              }
+            },
             clicks: { $sum: 1 }
           }
         },
         {
-          // Step 3: Collect data and get today's midnight anchor
-          $group: {
-            _id: null,
-            todayMidnight: {
-              $first: {
-                $dateTrunc: { date: "$$NOW", unit: "day", timezone: "UTC" }
-              }
-            },
-            stats: { $push: { rawDate: "$_id", clicks: "$clicks" } }
-          }
-        },
-        {
-          // Step 4: Dynamically generate the 30 raw Date objects [0, -1, ..., -29]
           $project: {
             _id: 0,
-            days: {
-              $map: {
-                input: { $range: [0, -30, -1] },
-                as: "offset",
-                in: {
-                  $dateAdd: {
-                    startDate: "$todayMidnight",
-                    unit: "day",
-                    amount: "$$offset",
-                    timezone: "UTC"
-                  }
-                }
-              }
-            },
-            stats: 1
+            date: "$_id.date",
+            clicks: 1
           }
         },
-        {
-          // Step 5: Unwind the generated dates
-          $unwind: "$days"
-        },
-        {
-          // Step 6: Strict Date object matching and final string formatting
-          $project: {
-            _id: 0,
-            date: {
-              $dateToString: { format: "%Y-%m-%d", date: "$days", timezone: "UTC" }
-            },
-            clicks: {
-              $let: {
-                vars: {
-                  matchedDay: {
-                    $filter: {
-                      input: "$stats",
-                      cond: { $eq: ["$$this.rawDate", "$days"] }
-                    }
-                  }
-                },
-                in: {
-                  $ifNull: [
-                    { $arrayElemAt: ["$$matchedDay.clicks", 0] },
-                    0
-                  ]
-                }
-              }
-            }
-          }
-        },
-        {
-          // Step 7: Sort oldest day to today
-          $sort: { date: 1 }
-        }
+        { $sort: { date: 1 } }
       ])
 
       return data;
@@ -873,7 +821,7 @@ export class ClicksService {
     }
   }
 
-  async getDevicesData(day:number = 6) {
+  async getDevicesData(day: number = 6) {
     try {
       const result = this.clickModel.aggregate([
         {

@@ -33,6 +33,5 @@ export class Url {
     owner_name!: string
 }
 
-
 export const UrlSchema = SchemaFactory.createForClass(Url)
 

@@ -203,7 +203,6 @@ export class UrlsService {
 
     const ownerObjectId = typeof owner_id === 'string' ? new Types.ObjectId(owner_id) : owner_id
 
-
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
