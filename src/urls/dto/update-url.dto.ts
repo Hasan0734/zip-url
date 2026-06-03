@@ -1,10 +1,7 @@
-import { IsBoolean, IsDate, IsOptional, IsString, IsUrl, Length, Matches, MaxLength, MinLength } from "class-validator";
+import { IsOptional, IsString, IsBoolean, IsDate, MinLength, MaxLength, Matches, ValidateIf } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
-
 export class UpdateUrlDto {
-
-
     @IsOptional()
     @MinLength(8, { message: "Alias is too short!" })
     @MaxLength(20, { message: "Alias is too big!" })
@@ -29,4 +26,5 @@ export class UpdateUrlDto {
     @IsOptional()
     @IsBoolean()
     is_active!: boolean;
+
 }

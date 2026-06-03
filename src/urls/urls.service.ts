@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, Inject, Type, } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, Inject, InternalServerErrorException, } from '@nestjs/common';
 import { CreateUrlDto } from './dto/create-url.dto';
 import { UpdateUrlDto } from './dto/update-url.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -93,26 +93,48 @@ export class UrlsService {
   }
 
   async update(_id: string, updateUrlDto: UpdateUrlDto, owner_id: Types.ObjectId) {
-
+    const $set: Record<string, any> = {};
+    const $unset: Record<string, string> = {};
+    const nullableFields = ['custom_alias', 'password', 'expires_at'];
+    const updatePayload: any = {}
     try {
-      const updated = await this.urlModel.findOneAndUpdate({ _id, owner_id }, updateUrlDto, {
-        returnDocument: 'after'
-      })
-      if (!updated) {
+      Object.keys(updateUrlDto).forEach(key => {
+        const value = updateUrlDto[key as keyof UpdateUrlDto];
+        if (value === undefined && nullableFields.includes(key)) {
+          $unset[key] = ""
+        }
+        else if (value !== undefined) {
+          $set[key] = value;
+        }
+      });
+
+      if (Object.keys($set).length > 0) updatePayload.$set = $set;
+      if (Object.keys($unset).length > 0) updatePayload.$unset = $unset;
+
+      if (Object.keys(updatePayload).length === 0) {
+        return {
+          success: false,
+          message: "Not found any property to update."
+        }
+      }
+
+      const updateDoc = await this.urlModel.findOneAndUpdate({ _id, owner_id }, updatePayload, { returnDocument: 'after' })
+      if (!updateDoc) {
         throw new NotFoundException()
       }
 
-      const shortCodeKey = `short:${updated.short_code}`;
+      const shortCodeKey = `short:${updateDoc.short_code}`;
       await this.cache.del(shortCodeKey);
 
-      if (updated.custom_alias) {
-        await this.cache.del(`short:${updated.custom_alias}`);
+      if (updateDoc?.custom_alias) {
+        await this.cache.del(`short:${updateDoc.custom_alias}`);
       }
 
       return { message: "URL updated!", success: true };
     } catch (error) {
-      throw error;
+      return new InternalServerErrorException()
     }
+
   }
 
   async remove(_id: Types.ObjectId, owner_id: Types.ObjectId, isAdmin: boolean) {
@@ -179,31 +201,49 @@ export class UrlsService {
 
   async getStatsSummary(owner_id: Types.ObjectId) {
 
+    const ownerObjectId = typeof owner_id === 'string' ? new Types.ObjectId(owner_id) : owner_id
 
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const [total, activeLinks, todayCreated, last24HoursAgo, clickStats, last24HoursClicksStats, visitor] = await Promise.all([
+    const [total, activeLinks, todayCreated, last24HoursAgo, clickStats, last24HoursClicksStats, visitor, expired] = await Promise.all([
       this.urlModel.countDocuments({ owner_id }),
       this.urlModel.countDocuments({ owner_id, is_active: true }),
       this.urlModel.countDocuments({ owner_id, createdAt: { $gte: startOfToday } }),
       this.urlModel.countDocuments({ owner_id, createdAt: { $gte: twentyFourHoursAgo } }),
       this.urlModel.aggregate([
-        { $match: { owner_id } },
+        { $match: { owner_id: ownerObjectId } },
         { $group: { _id: null, total: { $sum: "$click_count" } } }
       ]),
       this.urlModel.aggregate([
-        { $match: { owner_id, createdAt: { $gte: twentyFourHoursAgo } } },
+        { $match: { owner_id: ownerObjectId, createdAt: { $gte: twentyFourHoursAgo } } },
         { $group: { _id: null, total: { $sum: "$click_count" } } }
       ]
       ),
-      this.clicksService.getUniqueVisitor(owner_id)
+      this.clicksService.getUniqueVisitor(owner_id),
+      this.urlModel.aggregate([
+        {
+          $match: {
+            owner_id: ownerObjectId,
+            expires_at: { $exists: true, $ne: null },
+            $expr: {
+              $lt: ["$expires_at", "$$NOW"]
+            }
+          },
+        },
+        {
+          $count: "total_expired"
+        }
+      ]
+      )
+
     ])
 
     const totalClicks = clickStats[0]?.total || 0;
     const last24HoursClicks = last24HoursClicksStats[0]?.total || 0;
+    const expiredLinks = expired[0]?.total_expired
     return {
       total,
       activeLinks,
@@ -211,7 +251,8 @@ export class UrlsService {
       last24HoursAgo,
       totalClicks,
       last24HoursClicks,
-      visitor
+      visitor,
+      expiredLinks
     };
   }
 
@@ -274,6 +315,6 @@ export class UrlsService {
       this.clicksService.getUniqueVisitor()
     ])
     const result = urlData[0] || null
-    return {...result, visitor}
+    return { ...result, visitor }
   }
 }
