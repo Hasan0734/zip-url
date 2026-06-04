@@ -1,5 +1,5 @@
 import mongoose, { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument,  Schema as MongooseSchema  } from "mongoose";
+import { HydratedDocument, Schema as MongooseSchema } from "mongoose";
 
 export type UrlDocument = HydratedDocument<Url>;
 
@@ -19,6 +19,7 @@ export class Url {
 
     @Prop({ required: true, default: true })
     is_active!: boolean;
+
 
     @Prop({ required: true, unique: true, trim: true })
     short_code!: string;

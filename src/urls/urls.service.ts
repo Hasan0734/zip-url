@@ -242,7 +242,7 @@ export class UrlsService {
 
     const totalClicks = clickStats[0]?.total || 0;
     const last24HoursClicks = last24HoursClicksStats[0]?.total || 0;
-    const expiredLinks = expired[0]?.total_expired
+    const expiredLinks = expired[0]?.total_expired || 0
     return {
       total,
       activeLinks,

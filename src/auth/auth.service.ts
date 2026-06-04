@@ -23,8 +23,6 @@ import { Status } from './enum/status.enum';
 
 const refresh_token_expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
 
-
-
 @Injectable()
 export class AuthService {
   constructor(private userService: UserService, private jwtService: JwtService,
@@ -104,7 +102,10 @@ export class AuthService {
   async updateUserById(id: Types.ObjectId, updateUserDto: UpdateUserDto) {
     const user = await this.userService.findUserAndUpdate(id, updateUserDto);
     return {
-      access_token: await this.jwtService.signAsync(generatePayload(user))
+      success: true,
+      message: "Profile updated.",
+      access_token: await this.jwtService.signAsync(generatePayload(user)),
+      user
     };
   }
 
@@ -224,7 +225,6 @@ export class AuthService {
   async resendEmailVerification(emailDto: EmailDto) {
 
     const user = await this.userService.findUserByEmail(emailDto.email);
-
 
     if (user.is_verified) {
       return { message: "Already verified email.", success: false }
