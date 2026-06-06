@@ -20,6 +20,16 @@ export class Url {
     @Prop({ required: true, default: true })
     is_active!: boolean;
 
+    @Prop({
+        required: true,
+        type: String,
+        enum: ['approved', 'pending', 'banned'],
+        default: 'approved'
+    })
+    status!: string;
+
+    @Prop({ required: true, default: false })
+    is_nsfw!: boolean; 
 
     @Prop({ required: true, unique: true, trim: true })
     short_code!: string;

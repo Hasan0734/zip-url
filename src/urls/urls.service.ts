@@ -9,6 +9,7 @@ import { CustomAliasDto } from './dto/custom-alias.dto';
 import { Types } from 'mongoose';
 import { ClicksService } from 'src/clicks/clicks.service';
 import { QueryTypes } from 'src/common/types';
+import { Status } from './enum/status.enum';
 
 
 type PopulateUrl = {
@@ -135,6 +136,25 @@ export class UrlsService {
       return new InternalServerErrorException()
     }
 
+  }
+
+  async changeUrlStatus(_id: Types.ObjectId, status: Status) {
+    try {
+
+      const user = await this.urlModel
+        .findOneAndUpdate({ _id }, { status }, {
+          returnDocument: 'after',
+        })
+      if (!user) {
+        throw new NotFoundException('Your credentials is wrong!');
+      }
+      return {
+        success: true,
+        message: "Url status changed!"
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async remove(_id: Types.ObjectId, owner_id: Types.ObjectId, isAdmin: boolean) {

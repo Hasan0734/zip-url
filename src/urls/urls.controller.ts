@@ -199,8 +199,7 @@ export class UrlsController {
 
 @Controller('admin/urls')
 export class AdminUrlsController {
-  constructor(private readonly urlsService: UrlsService,
-    private clicksService: ClicksService,) { }
+  constructor(private readonly urlsService: UrlsService) { }
 
   @Throttle({ default: { limit: 50, ttl: 60000 } })
   @Get()
@@ -264,6 +263,11 @@ export class AdminUrlsController {
     return await this.urlsService.findAll({ ...filters }, queryOption);
   }
 
+  @Patch('/:id')
+  @Roles(Role.Admin)
+  async changeStatus(@Param('id') id: Types.ObjectId, @Body() body) {
+    return await this.urlsService.changeUrlStatus(id, body.status);
+  }
 
   @Get("stats/summary")
   @UseGuards(AuthGuard)
