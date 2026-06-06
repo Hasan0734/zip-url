@@ -45,6 +45,8 @@ export class ClicksController {
         { device: { $regex: searchRegex } },
         { os: { $regex: searchRegex } },
         { ip: { $regex: searchRegex } },
+        { browser: { $regex: searchRegex } },
+
       ]
     }
 
