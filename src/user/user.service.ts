@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { ObjectId, Types } from 'mongoose';
+import { twoFADto } from 'src/auth/dto/2FA.dto';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { UpdateUserDto } from 'src/auth/dto/update-user.dto';
 import { QueryTypes } from 'src/common/types';
@@ -93,7 +94,7 @@ export class UserService {
     }
   }
 
-  async findUserAndUpdate(_id: Types.ObjectId, userUpdateDto: UpdateUserDto) {
+  async findUserAndUpdate(_id: Types.ObjectId, userUpdateDto: UpdateUserDto | twoFADto) {
     try {
       const user = await this.userModel
         .findOneAndUpdate({ _id }, userUpdateDto, {

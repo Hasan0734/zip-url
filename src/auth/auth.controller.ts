@@ -14,6 +14,7 @@ import { VerifyOtpDto } from './dto/verifyotp.dto';
 import { Throttle } from '@nestjs/throttler';
 import { type Request, type Response } from 'express';
 import { Types } from 'mongoose';
+import { twoFADto } from './dto/2FA.dto';
 
 
 
@@ -57,6 +58,14 @@ export class AuthController {
   async changePassword(@Body() passwordDto: ChangePasswordDto, @Req() req) {
     const userId = req.user.sub
     return this.authService.changePassword(userId, passwordDto)
+  }
+
+  @Patch("/enable-2FA")
+  @UseGuards(AuthGuard, EmailVerifiedGuard)
+  @RequireVerified()
+  async handle2FASecurity (@Req() req, @Body() twoFADto) {
+    const userId = req.user.sub;
+    return this.authService.handle2FASecurity(userId, twoFADto)
   }
 
   @Get("/me")

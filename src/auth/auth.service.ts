@@ -20,6 +20,7 @@ import { VerifyOtpDto } from './dto/verifyotp.dto';
 import { generateOTP, generatePayload, handleHash } from 'src/common/utils/auth.util';
 import { ResendService } from 'src/resend/resend.service';
 import { Status } from './enum/status.enum';
+import { twoFADto } from './dto/2FA.dto';
 
 const refresh_token_expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
 
@@ -111,13 +112,10 @@ export class AuthService {
 
   async changePassword(id: Types.ObjectId, changePassword: ChangePasswordDto) {
     try {
-
       const user = await this.userService.findUserById(id, "password");
-
       if (!user) {
         throw new NotFoundException()
       }
-
       const checkPassword = await bcrypt.compare(changePassword.current_password, user.password);
       if (!checkPassword) {
         return {
@@ -126,8 +124,6 @@ export class AuthService {
           field: "current_password"
         }
       }
-
-
 
       const salt = await bcrypt.genSalt(10)
       const hashPassword = await bcrypt.hash(changePassword.new_password, salt);
@@ -148,6 +144,30 @@ export class AuthService {
       return { message: "Password changed!", success: true }
     } catch (error) {
       throw error;
+    }
+  }
+
+  async handle2FASecurity(id: Types.ObjectId, twoFA: twoFADto) {
+    try {
+      const user = await this.userService.findUserById(id);
+      if (!user) {
+        throw new NotFoundException()
+      }
+      await this.userService.findUserAndUpdate(id, twoFA)
+
+      if (twoFA.two_factor_enabled) {
+        return {
+          success: true,
+          message: "Enabled 2FA Authentication"
+        }
+      }
+
+      return {
+        success: true,
+        message: "Disabled 2FA Authentication"
+      }
+    } catch (error) {
+      throw error
     }
   }
 
