@@ -1,10 +1,10 @@
-import { Controller, Delete, Get, Param, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { Role } from 'src/auth/enum/role.enum';
-import mongoose, {Types} from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 const MAX_LIMIT = 50;
 const DEFAULT_LIMIT = 20;
@@ -63,5 +63,11 @@ export class UsersController {
   @Roles(Role.Admin)
   async deleteUser(@Param('id') id: Types.ObjectId) {
     return await this.userService.deleteUserById(id);
+  }
+
+  @Patch('/:id')
+  @Roles(Role.Admin)
+  async changeStatus(@Param('id') id: Types.ObjectId, @Body() body) {
+    return await this.userService.changeUserStatus(id, body.status);
   }
 }

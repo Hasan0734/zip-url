@@ -10,11 +10,12 @@ import mongoose, { ObjectId, Types } from 'mongoose';
 import { twoFADto } from 'src/auth/dto/2FA.dto';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { UpdateUserDto } from 'src/auth/dto/update-user.dto';
+import { Role } from 'src/auth/enum/role.enum';
 import { QueryTypes } from 'src/common/types';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel) {}
+  constructor(@InjectModel(User.name) private userModel) { }
 
   async registerUser(createUserDto: CreateUserDto) {
     try {
@@ -105,6 +106,25 @@ export class UserService {
         throw new NotFoundException('Your credentials is wrong!');
       }
       return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async changeUserStatus(_id: Types.ObjectId, status: Role) {
+    try {
+
+      const user = await this.userModel
+        .findOneAndUpdate({ _id }, { status }, {
+          returnDocument: 'after',
+        })
+      if (!user) {
+        throw new NotFoundException('Your credentials is wrong!');
+      }
+      return {
+        success: true,
+        message: "User status changed!"
+      };
     } catch (error) {
       throw error;
     }
