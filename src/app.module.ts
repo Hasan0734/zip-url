@@ -44,7 +44,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
           UrlsModule,
           UserModule,
           AnalyticsModule,
-
+          ClicksModule
         ]
       }
     ]),

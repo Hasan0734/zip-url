@@ -8,6 +8,7 @@ import axios from 'axios';
 import { UAParser } from 'ua-parser-js';
 import { UrlsService } from 'src/urls/urls.service';
 import { Types, ObjectId } from 'mongoose';
+import { QueryTypes } from 'src/common/types';
 
 @Injectable()
 export class ClicksService {
@@ -27,10 +28,24 @@ export class ClicksService {
     }
   }
 
-  async findAll(owner_id: string, url_id?: string) {
+  async findAll(filters:any, queries:QueryTypes) {
     try {
-      const result = await this.clickModel.find({ $or: [{ owner_id }, { url_id }] }).exec()
-      return result;
+      const clicks = await this.clickModel.find(filters)
+        .skip(queries.skip)
+        .limit(queries.limit)
+        .select(queries.fields)
+        .sort(queries.sortBy)
+        .exec()
+
+      const total = await this.clickModel.find().countDocuments();
+      const page = Math.ceil(total / queries.limit)
+
+      return {
+        clicks,
+        total,
+        page,
+        limit: queries.limit
+      };
     } catch (error) {
       throw error;
     }
