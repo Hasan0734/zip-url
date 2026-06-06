@@ -2,6 +2,9 @@ import { IsNotEmpty, IsStrongPassword } from "class-validator";
 import { Match } from "src/decorators/match.decorator";
 
 export class ChangePasswordDto {
+    @IsNotEmpty({ message: "Your current password required." })
+    current_password!: string;
+
     @IsStrongPassword({
         minLength: 8,
         minLowercase: 1,

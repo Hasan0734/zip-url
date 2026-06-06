@@ -1,106 +1,135 @@
 import { User } from './schemas/user.schema';
 
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
+import mongoose, { ObjectId, Types } from 'mongoose';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { UpdateUserDto } from 'src/auth/dto/update-user.dto';
 import { QueryTypes } from 'src/common/types';
 
-
-
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel) { }
+  constructor(@InjectModel(User.name) private userModel) {}
 
   async registerUser(createUserDto: CreateUserDto) {
     try {
       const { confirm_password, ...userData } = createUserDto;
       return await this.userModel.create(userData);
     } catch (err) {
-      const error = err as { code?: number }
+      const error = err as { code?: number };
       const DUPLICATE_KEY_CODE = 11000;
       if (error.code === DUPLICATE_KEY_CODE) {
-        throw new ConflictException("Email is already taken!")
+        throw new ConflictException('Email is already taken!');
       }
       throw error;
     }
   }
-  async findAll(filter: any, queries: QueryTypes) {
 
-    let fields = "-password "
+  async findAll(filter: any, queries: QueryTypes) {
+    let fields = '-password ';
 
     if (queries.fields) {
-      fields = fields + queries.fields
+      fields = fields + queries.fields;
     }
 
-
     try {
-      const users = await this.userModel.find(filter)
+      const users = await this.userModel
+        .find(filter)
         .skip(queries.skip)
         .limit(queries.limit)
         .select(fields)
         .sort(queries.sortBy)
-        .populate("totalLink")
+        .populate('totalLink')
         .exec();
-      const total = await this.userModel.find(filter).countDocuments()
-      const page = Math.ceil(total / queries.limit)
+      const total = await this.userModel.find(filter).countDocuments();
+      const page = Math.ceil(total / queries.limit);
 
       return { users, total, page, limit: queries.limit };
     } catch (error) {
       throw error;
     }
   }
+
   async findUserByEmail(email: string) {
     try {
       const user = await this.userModel.findOne({ email });
       if (!user) {
-        throw new NotFoundException("Your credentials is wrong!")
+        throw new NotFoundException('Your credentials is wrong!');
       }
       return user;
     } catch (error) {
-      throw error
+      throw error;
     }
   }
-  async findUserById(_id: string) {
+
+  async findUserById(_id: Types.ObjectId, select: string = "-password") {
     try {
-      const user = await this.userModel.findOne({ _id }).select("-password");
+      const user = await this.userModel.findOne({ _id }).select(select);
       if (!user) {
-        throw new NotFoundException("Your credentials is wrong!")
+        throw new NotFoundException('Your credentials is wrong!');
       }
       return user;
     } catch (error) {
-      throw error
+      throw error;
     }
   }
+
+  async deleteUserById(_id: Types.ObjectId) {
+    try {
+      const user = await this.userModel.findByIdAndDelete({ _id: _id });
+      if (!user) {
+        throw new NotFoundException('User not found!');
+      }
+      return {
+        message: 'User deleted successfully',
+        success: true,
+      };
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
   async findUserAndUpdate(_id: Types.ObjectId, userUpdateDto: UpdateUserDto) {
     try {
-      const user = await this.userModel.findOneAndUpdate({ _id }, userUpdateDto, {
-        returnDocument: 'after'
-      }).select("-password")
+      const user = await this.userModel
+        .findOneAndUpdate({ _id }, userUpdateDto, {
+          returnDocument: 'after',
+        })
+        .select('-password');
       if (!user) {
-        throw new NotFoundException("Your credentials is wrong!")
+        throw new NotFoundException('Your credentials is wrong!');
       }
       return user;
     } catch (error) {
       throw error;
     }
   }
+
   async updatePassword(_id: Types.ObjectId, password: string) {
     try {
-      const user = await this.userModel.findOneAndUpdate({ _id }, { password }, {
-        returnDocument: 'after'
-      }).select("-password")
+      const user = await this.userModel
+        .findOneAndUpdate(
+          { _id },
+          { password },
+          {
+            returnDocument: 'after',
+          },
+        )
+        .select('-password');
       if (!user) {
-        throw new NotFoundException("Your credentials is wrong!")
+        throw new NotFoundException('Your credentials is wrong!');
       }
       return user;
     } catch (error) {
       throw error;
     }
   }
-  async getUsersStats() {
 
+  async getUsersStats() {
     const [stats] = await Promise.all([
       this.userModel.aggregate([
         {
@@ -111,23 +140,19 @@ export class UserService {
                   _id: null,
                   verified: {
                     $sum: {
-                      $cond: [
-                        { $eq: ["$is_verified", true] },
-                        1,
-                        0
-                      ]
-                    }
+                      $cond: [{ $eq: ['$is_verified', true] }, 1, 0],
+                    },
                   },
                   notVerified: {
                     $sum: {
                       $cond: [
                         {
-                          $eq: ["$is_verified", false]
+                          $eq: ['$is_verified', false],
                         },
                         1,
-                        0
-                      ]
-                    }
+                        0,
+                      ],
+                    },
                   },
                   totalUsers: { $sum: 1 },
                   todayCreated: {
@@ -135,22 +160,22 @@ export class UserService {
                       $cond: [
                         {
                           $gte: [
-                            "$createdAt",
+                            '$createdAt',
                             {
                               $dateTrunc: {
-                                date: "$$NOW",
-                                unit: "day"
-                              }
-                            }
-                          ]
+                                date: '$$NOW',
+                                unit: 'day',
+                              },
+                            },
+                          ],
                         },
                         1,
-                        0
-                      ]
-                    }
-                  }
-                }
-              }
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
             ],
             statusCounts: [
               {
@@ -158,35 +183,23 @@ export class UserService {
                   _id: null,
                   activeUsers: {
                     $sum: {
-                      $cond: [
-                        { $eq: ["$status", "active"] },
-                        1,
-                        0
-                      ]
-                    }
+                      $cond: [{ $eq: ['$status', 'active'] }, 1, 0],
+                    },
                   },
                   pendingUsers: {
                     $sum: {
-                      $cond: [
-                        { $eq: ["$status", "pending"] },
-                        1,
-                        0
-                      ]
-                    }
+                      $cond: [{ $eq: ['$status', 'pending'] }, 1, 0],
+                    },
                   },
                   blockUsers: {
                     $sum: {
-                      $cond: [
-                        { $eq: ["$status", "block"] },
-                        1,
-                        0
-                      ]
-                    }
-                  }
-                }
-              }
-            ]
-          }
+                      $cond: [{ $eq: ['$status', 'block'] }, 1, 0],
+                    },
+                  },
+                },
+              },
+            ],
+          },
         },
         {
           $project: {
@@ -194,90 +207,66 @@ export class UserService {
             verified: {
               $ifNull: [
                 {
-                  $arrayElemAt: [
-                    "$verifiedCounts.verified",
-                    0
-                  ]
+                  $arrayElemAt: ['$verifiedCounts.verified', 0],
                 },
-                0
-              ]
+                0,
+              ],
             },
             notVerified: {
               $ifNull: [
                 {
-                  $arrayElemAt: [
-                    "$verifiedCounts.notVerified",
-                    0
-                  ]
+                  $arrayElemAt: ['$verifiedCounts.notVerified', 0],
                 },
-                0
-              ]
+                0,
+              ],
             },
             activeUsers: {
               $ifNull: [
                 {
-                  $arrayElemAt: [
-                    "$statusCounts.activeUsers",
-                    0
-                  ]
+                  $arrayElemAt: ['$statusCounts.activeUsers', 0],
                 },
-                0
-              ]
+                0,
+              ],
             },
             pendingUsers: {
               $ifNull: [
                 {
-                  $arrayElemAt: [
-                    "$statusCounts.pendingUsers",
-                    0
-                  ]
+                  $arrayElemAt: ['$statusCounts.pendingUsers', 0],
                 },
-                0
-              ]
+                0,
+              ],
             },
             blockUsers: {
               $ifNull: [
                 {
-                  $arrayElemAt: [
-                    "$statusCounts.blockUsers",
-                    0
-                  ]
+                  $arrayElemAt: ['$statusCounts.blockUsers', 0],
                 },
-                0
-              ]
+                0,
+              ],
             },
             totalUsers: {
               $ifNull: [
                 {
-                  $arrayElemAt: [
-                    "$verifiedCounts.totalUsers",
-                    0
-                  ]
+                  $arrayElemAt: ['$verifiedCounts.totalUsers', 0],
                 },
-                0
-              ]
+                0,
+              ],
             },
             todayCreated: {
               $ifNull: [
                 {
-                  $arrayElemAt: [
-                    "$verifiedCounts.todayCreated",
-                    0
-                  ]
+                  $arrayElemAt: ['$verifiedCounts.todayCreated', 0],
                 },
-                0
-              ]
-            }
-          }
-        }
+                0,
+              ],
+            },
+          },
+        },
       ]),
+    ]);
 
-    ])
+    const result = stats[0] || null;
 
-    const result = stats[0] || null
-
-
-    return result
-
+    return result;
   }
 }

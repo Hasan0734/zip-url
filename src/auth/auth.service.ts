@@ -110,22 +110,45 @@ export class AuthService {
   }
 
   async changePassword(id: Types.ObjectId, changePassword: ChangePasswordDto) {
-    const salt = await bcrypt.genSalt(10)
-    const hashPassword = await bcrypt.hash(changePassword.new_password, salt);
-    const user = await this.userService.updatePassword(id, hashPassword);
+    try {
 
-    // await this.mailService.sendEmail({
-    //   from: process.env.SECURITY_EMAIL,
-    //   to: user.email,
-    //   subject: 'Changed password',
-    //   template: 'changed-password',
-    //   context: {
-    //     name: user.first_name,
-    //     secure_account_link: ""
-    //   }
-    // })
+      const user = await this.userService.findUserById(id, "password");
 
-    return { message: "Password changed!", success: true }
+      if (!user) {
+        throw new NotFoundException()
+      }
+
+      const checkPassword = await bcrypt.compare(changePassword.current_password, user.password);
+      if (!checkPassword) {
+        return {
+          success: false,
+          message: "Current password invalid.",
+          field: "current_password"
+        }
+      }
+
+
+
+      const salt = await bcrypt.genSalt(10)
+      const hashPassword = await bcrypt.hash(changePassword.new_password, salt);
+
+      await this.userService.updatePassword(id as unknown as Types.ObjectId, hashPassword);
+
+      // await this.mailService.sendEmail({
+      //   from: process.env.SECURITY_EMAIL,
+      //   to: user.email,
+      //   subject: 'Changed password',
+      //   template: 'changed-password',
+      //   context: {
+      //     name: user.first_name,
+      //     secure_account_link: ""
+      //   }
+      // })
+
+      return { message: "Password changed!", success: true }
+    } catch (error) {
+      throw error;
+    }
   }
 
   async requestPasswordReset(data: EmailDto) {

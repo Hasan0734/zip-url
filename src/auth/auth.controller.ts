@@ -13,6 +13,7 @@ import { RequireVerified } from './decorator/require-verified.decorator';
 import { VerifyOtpDto } from './dto/verifyotp.dto';
 import { Throttle } from '@nestjs/throttler';
 import { type Request, type Response } from 'express';
+import { Types } from 'mongoose';
 
 
 
@@ -63,7 +64,7 @@ export class AuthController {
   @RequireVerified()
   async getProfile(@Req() req: CustomRequest) {
     const userId = req?.user?.sub
-    return await this.userService.findUserById(userId!)
+    return await this.userService.findUserById(userId as unknown as Types.ObjectId)
   }
 
 

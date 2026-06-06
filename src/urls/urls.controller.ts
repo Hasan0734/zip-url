@@ -32,7 +32,6 @@ export class UrlsController {
   @RequireVerified()
   async create(@Body() createUrlDto: CreateUrlDto, @Request() req) {
     const userId = req.user.sub
-
     const ownerName = `${req.user.first_name} ${req.user.last_name}`
 
     return await this.urlsService.create(createUrlDto, userId, ownerName);

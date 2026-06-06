@@ -53,9 +53,9 @@ export class ClicksService {
     try {
       const urls = await this.clickModel.deleteMany({ url: _id })
 
-      if (!urls.length) {
-        throw new NotFoundException("Url id not found to delete clicks.")
-      }
+      // if (!urls.length) {
+      //   throw new NotFoundException("Url id not found to delete clicks.")
+      // }
       return { message: "Clicks deleted by url id", success: true }
     } catch (error) {
       throw error;
