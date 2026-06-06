@@ -51,4 +51,12 @@ export class AnalyticsService {
 
         return { last90DaysDevices, last29DaysDevices, last6DaysDevices }
     }
+    async getUsersAnalytics() {
+        const [last90DaysUsers, last30DaysUsers, last6DaysUsers] = await Promise.all([
+            this.userService.getAnalytics(90),
+            this.userService.getAnalytics(30),
+            this.userService.getAnalytics(7),
+        ])
+        return { last90DaysUsers, last30DaysUsers, last6DaysUsers }
+    }
 }   

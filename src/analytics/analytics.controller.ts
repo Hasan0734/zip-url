@@ -33,4 +33,11 @@ export class AnalyticsController {
     async getClicksAnalytics() {
         return await this.analyticsService.getClicksAnalytics()
     }
+
+    @Get("/users")
+    @UseGuards(AuthGuard)
+    @Roles(Role.Admin)
+    async getUsersAnalytics() {
+        return await this.analyticsService.getUsersAnalytics()
+    }
 }

@@ -290,4 +290,62 @@ export class UserService {
 
     return result;
   }
+
+  async getAnalytics(day: number) {
+    try {
+      const result = await this.userModel.aggregate([
+        {
+          $match: {
+            $expr: {
+              $gte: [
+                "$createdAt",
+                {
+                  $dateSubtract: {
+                    startDate: {
+                      $dateTrunc: {
+                        date: "$$NOW",
+                        unit: "day",
+                        timezone: "UTC"
+                      }
+                    },
+                    amount: day,
+                    unit: "day"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: "$createdAt"
+              }
+            },
+            count: {
+              $sum: 1
+            }
+          }
+        },
+        {
+          $sort: {
+            _id: 1
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            date: "$_id",
+            count: 1
+          }
+        }
+      ])
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
 }
