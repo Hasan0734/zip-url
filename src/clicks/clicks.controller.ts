@@ -1,6 +1,8 @@
 import { Controller, Get, Param, UseGuards, Request, Req, Query } from '@nestjs/common';
 import { ClicksService } from './clicks.service';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
+import { Roles } from 'src/auth/decorator/roles.decorator';
+import { Role } from 'src/auth/enum/role.enum';
 
 const MAX_LIMIT = 50;
 const DEFAULT_LIMIT = 20;
@@ -79,6 +81,31 @@ export class ClicksController {
 
 
     return this.clicksService.findAll({ filters, owner: owner_id }, queryOption)
+  }
+
+
+  @Get("stats/summary")
+  @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
+  async getStatsByAdmin() {
+    const [visitor, totalClicks, topRegion, getTodayVisited, getTopDevice] = await Promise.all([
+      this.clicksService.getUniqueVisitor(),
+      this.clicksService.getTotalClicks(),
+      this.clicksService.getTopRegion(),
+      this.clicksService.getTodayVisited(),
+      this.clicksService.getTopDevice()
+    ])
+
+    const region = topRegion[0] || {}
+    const todayVisited = getTodayVisited[0] || {}
+    const topDevice = getTopDevice[0] || {}
+    return {
+      visitor,
+      totalClicks,
+      topRegion: region,
+      ...todayVisited,
+      topDevice
+    }
   }
 
 }

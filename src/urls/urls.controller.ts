@@ -176,9 +176,8 @@ export class UrlsController {
   @Get('stats/summary')
   @UseGuards(AuthGuard)
   async getStats(@Request() req) {
-    const owner_id = req.user.sub
 
-    return this.urlsService.getStatsSummary(owner_id)
+    return this.urlsService.getStatsSummary()
   }
 
   @Get("analytics/:id")
@@ -273,7 +272,6 @@ export class AdminUrlsController {
   @UseGuards(AuthGuard)
   @Roles(Role.Admin)
   async getStatsByAdmin() {
-
     return this.urlsService.getStatsByAdmin()
   }
 }

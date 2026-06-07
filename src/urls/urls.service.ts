@@ -219,121 +219,201 @@ export class UrlsService {
     }
   }
 
-  async getStatsSummary(owner_id: Types.ObjectId) {
+  async getStatsSummary(owner_id?: Types.ObjectId) {
+    try {
 
-    const ownerObjectId = typeof owner_id === 'string' ? new Types.ObjectId(owner_id) : owner_id
+      const ownerObjectId = typeof owner_id === 'string' ? new Types.ObjectId(owner_id) : owner_id
 
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+      const filters: any = {}
+      const match: any = {
+      }
 
-    const [total, activeLinks, todayCreated, last24HoursAgo, clickStats, last24HoursClicksStats, visitor, expired] = await Promise.all([
-      this.urlModel.countDocuments({ owner_id }),
-      this.urlModel.countDocuments({ owner_id, is_active: true }),
-      this.urlModel.countDocuments({ owner_id, createdAt: { $gte: startOfToday } }),
-      this.urlModel.countDocuments({ owner_id, createdAt: { $gte: twentyFourHoursAgo } }),
-      this.urlModel.aggregate([
-        { $match: { owner_id: ownerObjectId } },
-        { $group: { _id: null, total: { $sum: "$click_count" } } }
-      ]),
-      this.urlModel.aggregate([
-        { $match: { owner_id: ownerObjectId, createdAt: { $gte: twentyFourHoursAgo } } },
-        { $group: { _id: null, total: { $sum: "$click_count" } } }
-      ]
-      ),
-      this.clicksService.getUniqueVisitor(owner_id),
-      this.urlModel.aggregate([
-        {
-          $match: {
-            owner_id: ownerObjectId,
-            expires_at: { $exists: true, $ne: null },
-            $expr: {
-              $lt: ["$expires_at", "$$NOW"]
+      if (owner_id) {
+        filters.owner_id = owner_id;
+        match.owner_id = ownerObjectId
+      }
+
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      const [total, activeLinks, todayCreated, last24HoursAgo, clickStats, last24HoursClicksStats, visitor, expired] = await Promise.all([
+        this.urlModel.countDocuments(filters),
+        this.urlModel.countDocuments({ ...filters, is_active: true }),
+        this.urlModel.countDocuments({ ...filters, createdAt: { $gte: startOfToday } }),
+        this.urlModel.countDocuments({ ...filters, createdAt: { $gte: twentyFourHoursAgo } }),
+        this.urlModel.aggregate([
+          { $match: match },
+          { $group: { _id: null, total: { $sum: "$click_count" } } }
+        ]),
+        this.urlModel.aggregate([
+          { $match: { ...match, createdAt: { $gte: twentyFourHoursAgo } } },
+          { $group: { _id: null, total: { $sum: "$click_count" } } }
+        ]
+        ),
+        this.clicksService.getUniqueVisitor(owner_id),
+        this.urlModel.aggregate([
+          {
+            $match: {
+              ...match,
+              expires_at: { $exists: true, $ne: null },
+              $expr: {
+                $lt: ["$expires_at", "$$NOW"]
+              }
             }
           },
-        },
-        {
-          $count: "total_expired"
-        }
-      ]
-      )
+          {
+            $count: "total_expired"
+          }
+        ]
+        )
 
-    ])
+      ])
 
-    const totalClicks = clickStats[0]?.total || 0;
-    const last24HoursClicks = last24HoursClicksStats[0]?.total || 0;
-    const expiredLinks = expired[0]?.total_expired || 0
-    return {
-      total,
-      activeLinks,
-      todayCreated,
-      last24HoursAgo,
-      totalClicks,
-      last24HoursClicks,
-      visitor,
-      expiredLinks
-    };
+      const totalClicks = clickStats[0]?.total || 0;
+      const last24HoursClicks = last24HoursClicksStats[0]?.total || 0;
+      const expiredLinks = expired[0]?.total_expired || 0
+      return {
+        total,
+        activeLinks,
+        todayCreated,
+        last24HoursAgo,
+        totalClicks,
+        last24HoursClicks,
+        visitor,
+        expiredLinks
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getAnalytics(owner_id?: Types.ObjectId, _id?: Types.ObjectId) {
 
-    const urlId = typeof _id === "string" ? new Types.ObjectId(_id) : _id
+    try {
+      const urlId = typeof _id === "string" ? new Types.ObjectId(_id) : _id
 
-    const [WeeklyData, topCountries, devices, last7DaysAgo, last30Days, visitor, clickStats] = await Promise.all([
-      this.clicksService.getAllUrlWeekData(owner_id, _id),
-      this.clicksService.getToCountries(owner_id, _id),
-      this.clicksService.getAllDevices(owner_id, _id),
-      this.clicksService.last7DaysAgo(owner_id, _id),
-      this.clicksService.last30Days(owner_id, _id),
-      this.clicksService.getUniqueVisitor(owner_id, _id),
-      this.urlModel.aggregate([
-        { $match: { owner_id, _id: urlId } },
-        { $group: { _id: null, total: { $sum: "$click_count" } } }
-      ]),
+      const [WeeklyData, topCountries, devices, last7DaysAgo, last30Days, visitor, clickStats] = await Promise.all([
+        this.clicksService.getAllUrlWeekData(owner_id, _id),
+        this.clicksService.getToCountries(owner_id, _id),
+        this.clicksService.getAllDevices(owner_id, _id),
+        this.clicksService.last7DaysAgo(owner_id, _id),
+        this.clicksService.last30Days(owner_id, _id),
+        this.clicksService.getUniqueVisitor(owner_id, _id),
+        this.urlModel.aggregate([
+          { $match: { owner_id, _id: urlId } },
+          { $group: { _id: null, total: { $sum: "$click_count" } } }
+        ]),
 
-    ])
+      ])
 
-    const totalClicks = clickStats[0]?.total || 0;
-    return { topCountries, devices, ...WeeklyData, last7DaysAgo, last30Days, visitor, totalClicks }
+      const totalClicks = clickStats[0]?.total || 0;
+      return { topCountries, devices, ...WeeklyData, last7DaysAgo, last30Days, visitor, totalClicks }
+
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async getAdminAnalytics(day: number) {
+    try {
+      const result = await this.urlModel.aggregate([
+        {
+          $match: {
+            $expr: {
+              $gte: [
+                "$createdAt",
+                {
+                  $dateSubtract: {
+                    startDate: {
+                      $dateTrunc: {
+                        date: "$$NOW",
+                        unit: "day",
+                        timezone: "UTC"
+                      }
+                    },
+                    amount: day,
+                    unit: "day"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: "$createdAt"
+              }
+            },
+            count: {
+              $sum: 1
+            }
+          }
+        },
+        {
+          $sort: {
+            _id: 1
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            date: "$_id",
+            count: 1
+          }
+        }
+      ])
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getStatsByAdmin() {
-    const [urlData, visitor] = await Promise.all([
-      this.urlModel.aggregate([
-        {
-          $group: {
-            _id: null,
-            activeUrls: {
-              $sum: { $cond: ["$is_active", 1, 0] }
-            },
-            todayCreatedUrls: {
-              $sum: {
-                $cond: [
-                  {
-                    $gte: [
-                      "$createdAt",
-                      {
-                        $dateTrunc: {
-                          date: "$$NOW",
-                          unit: "day"
+    try {
+      const [urlData, visitor, totalClicks] = await Promise.all([
+        this.urlModel.aggregate([
+          {
+            $group: {
+              _id: null,
+              activeUrls: {
+                $sum: { $cond: ["$is_active", 1, 0] }
+              },
+              todayCreatedUrls: {
+                $sum: {
+                  $cond: [
+                    {
+                      $gte: [
+                        "$createdAt",
+                        {
+                          $dateTrunc: {
+                            date: "$$NOW",
+                            unit: "day"
+                          }
                         }
-                      }
-                    ]
-                  },
-                  1,
-                  0
-                ]
-              }
-            },
-            totalUrls: { $sum: 1 },
-            totalClicks: { $sum: "$click_count" }
-          }
-        },
-        { $project: { _id: 0 } }
-      ]),
-      this.clicksService.getUniqueVisitor()
-    ])
-    const result = urlData[0] || null
-    return { ...result, visitor }
+                      ]
+                    },
+                    1,
+                    0
+                  ]
+                }
+              },
+              totalUrls: { $sum: 1 },
+              totalClicks: { $sum: "$click_count" }
+            }
+          },
+          { $project: { _id: 0 } }
+        ]),
+        this.clicksService.getUniqueVisitor(),
+        this.clicksService.getTotalClicks()
+      ])
+      const result = urlData[0] || null
+      return { ...result, totalClicks, visitor }
+    } catch (error) {
+      throw error;
+    }
   }
 }

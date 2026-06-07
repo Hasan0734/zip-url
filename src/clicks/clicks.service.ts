@@ -28,7 +28,7 @@ export class ClicksService {
     }
   }
 
-  async findAll(filters:any, queries:QueryTypes) {
+  async findAll(filters: any, queries: QueryTypes) {
     try {
       const clicks = await this.clickModel.find(filters)
         .skip(queries.skip)
@@ -64,6 +64,7 @@ export class ClicksService {
       throw error
     }
   }
+
   async deleteAllByUrlId(_id: Types.ObjectId) {
     try {
       const urls = await this.clickModel.deleteMany({ url: _id })
@@ -76,6 +77,7 @@ export class ClicksService {
       throw error;
     }
   }
+
   async getToCountries(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
     const matchQuery: any = {}
@@ -141,6 +143,7 @@ export class ClicksService {
     }
 
   }
+
   async getAllDevices(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
 
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
@@ -207,6 +210,7 @@ export class ClicksService {
     }
 
   }
+
   async getAllUrlWeekData(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     try {
       const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
@@ -499,6 +503,7 @@ export class ClicksService {
       throw error;
     }
   }
+
   async last7DaysAgo(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
     const matchQuery: any = {}
@@ -769,6 +774,7 @@ export class ClicksService {
     }
 
   }
+
   async last30Days(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === 'string' ? new Types.ObjectId(owner) : owner;
     const matchQuery: any = {}
@@ -948,8 +954,208 @@ export class ClicksService {
     return visitor.length || 0
   }
 
+  async getTopRegion() {
+    try {
+      const result = await this.clickModel.aggregate([
+        {
+          $group: { _id: "$city", count: { $sum: 1 } }
+        },
+        {
+          $project: {
+            _id: 0,
+            city: "$_id",
+            count: "$count"
+          }
+        },
+        { $sort: { count: -1 } },
+        { $limit: 1 }
+      ])
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getTotalClicks() {
     return await this.clickModel.countDocuments().exec()
+  }
+  async getTodayVisited() {
+    try {
+      const result = await this.clickModel.aggregate([
+        {
+          $facet: {
+            todayVisits: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $gte: [
+                          "$createdAt",
+                          {
+                            $dateTrunc: {
+                              date: "$$NOW",
+                              unit: "day",
+                              timezone: "+06:00"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        $lt: [
+                          "$createdAt",
+                          {
+                            $dateAdd: {
+                              startDate: {
+                                $dateTrunc: {
+                                  date: "$$NOW",
+                                  unit: "day",
+                                  timezone: "+06:00"
+                                }
+                              },
+                              unit: "day",
+                              amount: 1
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              { $count: "count" }
+            ],
+            newVisitors: [
+              {
+                $group: {
+                  _id: "$visitorId",
+                  firstVisit: { $min: "$createdAt" }
+                }
+              },
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $gte: [
+                          "$firstVisit",
+                          {
+                            $dateTrunc: {
+                              date: "$$NOW",
+                              unit: "day",
+                              timezone: "+06:00"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        $lt: [
+                          "$firstVisit",
+                          {
+                            $dateAdd: {
+                              startDate: {
+                                $dateTrunc: {
+                                  date: "$$NOW",
+                                  unit: "day",
+                                  timezone: "+06:00"
+                                }
+                              },
+                              unit: "day",
+                              amount: 1
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              { $count: "count" }
+            ]
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            todayVisitedCount: {
+              $ifNull: [
+                {
+                  $arrayElemAt: [
+                    "$todayVisits.count",
+                    0
+                  ]
+                },
+                0
+              ]
+            },
+            newVisitorCount: {
+              $ifNull: [
+                {
+                  $arrayElemAt: [
+                    "$newVisitors.count",
+                    0
+                  ]
+                },
+                0
+              ]
+            }
+          }
+        }
+      ])
+      return result;
+    } catch (error) {
+
+    }
+  }
+
+  async getTopDevice() {
+    try {
+      const result = await this.clickModel.aggregate([
+        {
+          $group: { _id: "$device", count: { $sum: 1 } }
+        },
+        {
+          $setWindowFields: {
+            output: {
+              grandTotalClicks: {
+                $sum: "$count"
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            device: { $ifNull: ["$_id", "Unknown"] },
+            count: "$count",
+            percentage: {
+              $round: [
+                {
+                  $multiply: [
+                    {
+                      $divide: [
+                        "$count",
+                        "$grandTotalClicks"
+                      ]
+                    },
+                    100
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        { $sort: { count: -1 } },
+        {
+          $limit: 1
+        }
+      ])
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async track(url: any, req: any, visitorId: string | undefined) {

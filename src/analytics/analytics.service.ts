@@ -18,8 +18,8 @@ export class AnalyticsService {
                 this.clicksService.getAllUrlWeekData(owner_id),
                 this.clicksService.last7DaysAgo(owner_id),
                 this.clicksService.last30Days(owner_id)
-
             ])
+
             return { topCountries, devices, ...WeeklyData, last7DaysAgo, last30Days }
         } catch (error) {
             throw error;
@@ -28,14 +28,17 @@ export class AnalyticsService {
 
     async getStats() {
         try {
-            const [urlStats, userStats] = await Promise.all([
+            const [urlStats, userStats, totalClicks] = await Promise.all([
                 this.urlsService.getStatsByAdmin(),
-                this.userService.getUsersStats()
+                this.userService.getUsersStats(),
+                this.clicksService.getTotalClicks()
             ])
 
+            console.log(urlStats)
             return {
                 ...urlStats,
-                totalUser: userStats.totalUsers
+                totalUser: userStats.totalUsers,
+                totalClicks
             }
         } catch (error) {
             throw error;
@@ -51,6 +54,7 @@ export class AnalyticsService {
 
         return { last90DaysDevices, last29DaysDevices, last6DaysDevices }
     }
+    
     async getUsersAnalytics() {
         const [last90DaysUsers, last30DaysUsers, last6DaysUsers] = await Promise.all([
             this.userService.getAnalytics(90),
@@ -58,5 +62,14 @@ export class AnalyticsService {
             this.userService.getAnalytics(7),
         ])
         return { last90DaysUsers, last30DaysUsers, last6DaysUsers }
+    }
+
+    async getUrlsAnalytics() {
+        const [last90DaysUrls, last30DaysUrls, last6DaysUrls] = await Promise.all([
+            this.urlsService.getAdminAnalytics(90),
+            this.urlsService.getAdminAnalytics(30),
+            this.urlsService.getAdminAnalytics(7),
+        ])
+        return { last90DaysUrls, last30DaysUrls, last6DaysUrls }
     }
 }   

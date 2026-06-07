@@ -1,4 +1,4 @@
-import { Controller, Get, Request, UseGuards } from "@nestjs/common";
+import { Controller, Get, Req, UseGuards } from "@nestjs/common";
 import { AnalyticsService } from "./analytics.service";
 import { AuthGuard } from "src/auth/guard/auth.guard";
 import { Roles } from "src/auth/decorator/roles.decorator";
@@ -10,12 +10,12 @@ export class AnalyticsController {
 
     @Get()
     @UseGuards(AuthGuard)
-    async getAnalytics(@Request() req) {
+    async getAnalytics(@Req() req) {
         const owner_id = req.user.sub
-        if (req.user.role === 'admin') {
-            return await this.analyticsService.getAnalytics();
+        // if (req.user.role === 'admin') {
+        //     return await this.analyticsService.getAnalytics();
 
-        }
+        // }
         return await this.analyticsService.getAnalytics(owner_id);
     }
 
@@ -39,5 +39,11 @@ export class AnalyticsController {
     @Roles(Role.Admin)
     async getUsersAnalytics() {
         return await this.analyticsService.getUsersAnalytics()
+    }
+    @Get("/urls")
+    @UseGuards(AuthGuard)
+    @Roles(Role.Admin)
+    async getUrlsAnalytics() {
+        return await this.analyticsService.getUrlsAnalytics()
     }
 }

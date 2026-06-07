@@ -151,144 +151,148 @@ export class UserService {
   }
 
   async getUsersStats() {
-    const [stats] = await Promise.all([
-      this.userModel.aggregate([
-        {
-          $facet: {
-            verifiedCounts: [
-              {
-                $group: {
-                  _id: null,
-                  verified: {
-                    $sum: {
-                      $cond: [{ $eq: ['$is_verified', true] }, 1, 0],
+    try {
+      const [stats] = await Promise.all([
+        this.userModel.aggregate([
+          {
+            $facet: {
+              verifiedCounts: [
+                {
+                  $group: {
+                    _id: null,
+                    verified: {
+                      $sum: {
+                        $cond: [{ $eq: ['$is_verified', true] }, 1, 0],
+                      },
                     },
-                  },
-                  notVerified: {
-                    $sum: {
-                      $cond: [
-                        {
-                          $eq: ['$is_verified', false],
-                        },
-                        1,
-                        0,
-                      ],
+                    notVerified: {
+                      $sum: {
+                        $cond: [
+                          {
+                            $eq: ['$is_verified', false],
+                          },
+                          1,
+                          0,
+                        ],
+                      },
                     },
-                  },
-                  totalUsers: { $sum: 1 },
-                  todayCreated: {
-                    $sum: {
-                      $cond: [
-                        {
-                          $gte: [
-                            '$createdAt',
-                            {
-                              $dateTrunc: {
-                                date: '$$NOW',
-                                unit: 'day',
+                    totalUsers: { $sum: 1 },
+                    todayCreated: {
+                      $sum: {
+                        $cond: [
+                          {
+                            $gte: [
+                              '$createdAt',
+                              {
+                                $dateTrunc: {
+                                  date: '$$NOW',
+                                  unit: 'day',
+                                },
                               },
-                            },
-                          ],
-                        },
-                        1,
-                        0,
-                      ],
+                            ],
+                          },
+                          1,
+                          0,
+                        ],
+                      },
                     },
                   },
                 },
-              },
-            ],
-            statusCounts: [
-              {
-                $group: {
-                  _id: null,
-                  activeUsers: {
-                    $sum: {
-                      $cond: [{ $eq: ['$status', 'active'] }, 1, 0],
+              ],
+              statusCounts: [
+                {
+                  $group: {
+                    _id: null,
+                    activeUsers: {
+                      $sum: {
+                        $cond: [{ $eq: ['$status', 'active'] }, 1, 0],
+                      },
+                    },
+                    pendingUsers: {
+                      $sum: {
+                        $cond: [{ $eq: ['$status', 'pending'] }, 1, 0],
+                      },
+                    },
+                    blockUsers: {
+                      $sum: {
+                        $cond: [{ $eq: ['$status', 'block'] }, 1, 0],
+                      },
                     },
                   },
-                  pendingUsers: {
-                    $sum: {
-                      $cond: [{ $eq: ['$status', 'pending'] }, 1, 0],
-                    },
-                  },
-                  blockUsers: {
-                    $sum: {
-                      $cond: [{ $eq: ['$status', 'block'] }, 1, 0],
-                    },
-                  },
                 },
-              },
-            ],
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            verified: {
-              $ifNull: [
-                {
-                  $arrayElemAt: ['$verifiedCounts.verified', 0],
-                },
-                0,
-              ],
-            },
-            notVerified: {
-              $ifNull: [
-                {
-                  $arrayElemAt: ['$verifiedCounts.notVerified', 0],
-                },
-                0,
-              ],
-            },
-            activeUsers: {
-              $ifNull: [
-                {
-                  $arrayElemAt: ['$statusCounts.activeUsers', 0],
-                },
-                0,
-              ],
-            },
-            pendingUsers: {
-              $ifNull: [
-                {
-                  $arrayElemAt: ['$statusCounts.pendingUsers', 0],
-                },
-                0,
-              ],
-            },
-            blockUsers: {
-              $ifNull: [
-                {
-                  $arrayElemAt: ['$statusCounts.blockUsers', 0],
-                },
-                0,
-              ],
-            },
-            totalUsers: {
-              $ifNull: [
-                {
-                  $arrayElemAt: ['$verifiedCounts.totalUsers', 0],
-                },
-                0,
-              ],
-            },
-            todayCreated: {
-              $ifNull: [
-                {
-                  $arrayElemAt: ['$verifiedCounts.todayCreated', 0],
-                },
-                0,
               ],
             },
           },
-        },
-      ]),
-    ]);
+          {
+            $project: {
+              _id: 0,
+              verified: {
+                $ifNull: [
+                  {
+                    $arrayElemAt: ['$verifiedCounts.verified', 0],
+                  },
+                  0,
+                ],
+              },
+              notVerified: {
+                $ifNull: [
+                  {
+                    $arrayElemAt: ['$verifiedCounts.notVerified', 0],
+                  },
+                  0,
+                ],
+              },
+              activeUsers: {
+                $ifNull: [
+                  {
+                    $arrayElemAt: ['$statusCounts.activeUsers', 0],
+                  },
+                  0,
+                ],
+              },
+              pendingUsers: {
+                $ifNull: [
+                  {
+                    $arrayElemAt: ['$statusCounts.pendingUsers', 0],
+                  },
+                  0,
+                ],
+              },
+              blockUsers: {
+                $ifNull: [
+                  {
+                    $arrayElemAt: ['$statusCounts.blockUsers', 0],
+                  },
+                  0,
+                ],
+              },
+              totalUsers: {
+                $ifNull: [
+                  {
+                    $arrayElemAt: ['$verifiedCounts.totalUsers', 0],
+                  },
+                  0,
+                ],
+              },
+              todayCreated: {
+                $ifNull: [
+                  {
+                    $arrayElemAt: ['$verifiedCounts.todayCreated', 0],
+                  },
+                  0,
+                ],
+              },
+            },
+          },
+        ]),
+      ]);
 
-    const result = stats[0] || null;
+      const result = stats[0] || null;
 
-    return result;
+      return result;
+    } catch (error) {
+      throw error
+    }
   }
 
   async getAnalytics(day: number) {
