@@ -29,7 +29,6 @@ export class ClicksService {
   }
 
   async findAll(filters: any, queries: QueryTypes) {
-    console.log(filters)
     try {
       const clicks = await this.clickModel.find(filters)
         .skip(queries.skip)
@@ -139,7 +138,6 @@ export class ClicksService {
       ])
       return data;
     } catch (error) {
-      console.log(error)
       throw error;
     }
 
@@ -786,7 +784,6 @@ export class ClicksService {
       matchQuery.owner = ownerObjectId
     }
 
-    console.log(matchQuery)
 
     try {
       const data = await this.clickModel.aggregate([
@@ -986,11 +983,16 @@ export class ClicksService {
     }
   }
 
-  async getTotalClicks(owner?: Types.ObjectId,) {
+  async getTotalClicks(owner?: Types.ObjectId, urlId?: Types.ObjectId) {
     const ownerObjectId = typeof owner === "string" ? new Types.ObjectId(owner) : owner;
     const filters: any = {}
     if (owner) {
       filters.owner = ownerObjectId
+    }
+    if (urlId) {
+      const urlObjectId = typeof urlId === "string" ? new Types.ObjectId(urlId) : urlId;
+      filters.url = urlObjectId
+
     }
     return await this.clickModel.countDocuments(filters).exec()
   }

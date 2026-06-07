@@ -34,7 +34,6 @@ export class AnalyticsService {
                 this.clicksService.getTotalClicks()
             ])
 
-            console.log(urlStats)
             return {
                 ...urlStats,
                 totalUser: userStats.totalUsers,

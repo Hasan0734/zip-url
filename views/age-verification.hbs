@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Age Verification</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+
+<body class="bg-background selection:bg-primary/30 selection:text-primary scroll-smooth">
+    <div class="relative flex w-full min-h-screen items-center justify-center overflow-hidden py-10">
+
+
+        <div class="fixed inset-0 z-0">
+            <div class="absolute top-[-10%] left-[-10%] h-[50%] w-[50%] rounded-full bg-primary/10 blur-[120px]"></div>
+            <div class="absolute right-[-10%] bottom-[-10%] h-[40%] w-[40%] rounded-full bg-primary/5 blur-[100px]">
+            </div>
+            <div class="absolute top-1/2 left-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 opacity-20" style="
+        background-image: radial-gradient(#69f6b8 0.5px, transparent 0.5px); background-size:32px 32px;"></div>
+        </div>
+
+        <div class="glass-card emerald-glow w-full max-w-122 rounded-[2rem] bg-background! p-10 md:p-12 text-center">
+
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-red-600/20 rounded-full mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-8 h-8 text-red-500">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+            </div>
+
+            <h1 class="text-2xl font-bold text-white mb-3">Age Verification Required</h1>
+            <p class="text-muted-foreground mb-8">
+                The link you are trying to visit contains adult content (<strong>NSFW</strong>). You must be at least 18
+                years old to view this material.
+            </p>
+
+            <div class="mt-8 space-y-3">
+                <button id="btn-confirm" data-info="{{targetUrl}}"
+                    class="w-full bg-primary hover:bg-primary/80 text-white font-semibold py-3 rounded-lg transition duration-200">
+                    I am 18 or older
+                </button>
+
+                <button id="btn-decline"
+                    class="w-full border border-border text-muted-foreground py-3 rounded-lg transition duration-200">
+                    I am under 18
+                </button>
+
+
+
+            </div>
+            <p class="mt-6 text-sm text-muted-foreground">
+                By clicking continue, you agree to our Terms of Service regarding adult content.
+            </p>
+        </div>
+
+        <script>
+            const confirmBtn = document.getElementById('btn-confirm');
+            const targetUrl = confirmBtn.getAttribute('data-info');
+
+            // When user confirms age
+            confirmBtn.addEventListener('click', () => {
+                console.log(targetUrl)
+                window.location.href = targetUrl;
+            });
+
+            // When user is underage
+            document.getElementById('btn-decline').addEventListener('click', () => {
+                window.location.href = '/';
+            });
+        </script>
+</body>
+
+</html>

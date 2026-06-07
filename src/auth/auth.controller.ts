@@ -35,7 +35,6 @@ export class AuthController {
 
   @Post('/sign-in')
   async signIn(@Body() signInDto: SignInDto, @Res({ passthrough: true }) response: Response) {
-    console.log(signInDto)
     const result = await this.authService.userSignIn(signInDto, response)
     return result
   }

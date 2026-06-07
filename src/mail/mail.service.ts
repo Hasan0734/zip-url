@@ -13,7 +13,7 @@ export class MailService {
 
             return { success: true, message: "Mail was sent" }
         } catch (error) {
-            console.log(error)
+            throw error;
         }
 
     }

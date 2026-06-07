@@ -29,7 +29,7 @@ export class Url {
     status!: string;
 
     @Prop({ required: true, default: false })
-    is_nsfw!: boolean; 
+    is_nsfw!: boolean;
 
     @Prop({ required: true, unique: true, trim: true })
     short_code!: string;

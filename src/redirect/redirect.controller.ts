@@ -37,13 +37,18 @@ export class RedirctController {
         switch (result.type) {
             case 'NOT_FOUND':
                 return res.render('not_found.hbs');
-
             case 'DISABLED':
                 return res.render('disabled.hbs');
-
             case 'EXPIRED':
                 return res.render('expired.hbs');
-
+            case 'BANNED':
+                return res.render('banned.hbs')
+            case 'PENDING':
+                return res.render('pending.hbs')
+            case 'AGE_VERIFICATION':
+                return res.render("age-verification.hbs", {
+                    targetUrl: result.targetUrl
+                })
             case 'OK':
                 const url = result.data;
 

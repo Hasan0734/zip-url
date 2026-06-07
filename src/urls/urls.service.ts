@@ -79,13 +79,23 @@ export class UrlsService {
       if (!url) {
         return { type: 'NOT_FOUND' };
       }
-
       if (!url.is_active) {
         return { type: 'DISABLED' };
       }
+      if (url.status === "banned") {
+        return { type: 'BANNED' };
+      }
+      if (url.status === "pending") {
+        return { type: 'PENDING' };
+      }
+      if (url.is_nsfw) {
+        return { type: 'AGE_VERIFICATION', targetUrl: url?.original_url };
+      }
+
       if (url.expires_at && url.expires_at < new Date()) {
         return { type: 'EXPIRED' };
       }
+
       await this.cache.set(shortCodeKey, url, 3600000)
       return { type: 'OK', data: url };
     } catch (error) {
@@ -141,16 +151,46 @@ export class UrlsService {
   async changeUrlStatus(_id: Types.ObjectId, status: Status) {
     try {
 
-      const user = await this.urlModel
+      const url = await this.urlModel
         .findOneAndUpdate({ _id }, { status }, {
           returnDocument: 'after',
         })
-      if (!user) {
-        throw new NotFoundException('Your credentials is wrong!');
+      if (!url) {
+        throw new NotFoundException('Url not found!');
+      }
+      const shortCodeKey = `short:${url.short_code}`;
+      await this.cache.del(shortCodeKey);
+
+      if (url?.custom_alias) {
+        await this.cache.del(`short:${url.custom_alias}`);
       }
       return {
         success: true,
         message: "Url status changed!"
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+  async changeUrlNsfw(_id: Types.ObjectId, is_nsfw: boolean) {
+    try {
+
+      const url = await this.urlModel
+        .findOneAndUpdate({ _id }, { is_nsfw }, {
+          returnDocument: 'after',
+        })
+      if (!url) {
+        throw new NotFoundException('Not found url');
+      }
+      const shortCodeKey = `short:${url.short_code}`;
+      await this.cache.del(shortCodeKey);
+
+      if (url?.custom_alias) {
+        await this.cache.del(`short:${url.custom_alias}`);
+      }
+      return {
+        success: true,
+        message: "Url nsfw changed!"
       };
     } catch (error) {
       throw error;
@@ -237,7 +277,7 @@ export class UrlsService {
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
 
-      const [total, activeLinks, todayCreated, last24HoursAgo, clickStats, last24HoursClicksStats, visitor, expired] = await Promise.all([
+      const [total, activeLinks, todayCreated, last24HoursAgo, clickStats, last24HoursClicksStats, visitor, expired, getTopRegion] = await Promise.all([
         this.urlModel.countDocuments(filters),
         this.urlModel.countDocuments({ ...filters, is_active: true }),
         this.urlModel.countDocuments({ ...filters, createdAt: { $gte: startOfToday } }),
@@ -266,13 +306,14 @@ export class UrlsService {
             $count: "total_expired"
           }
         ]
-        )
-
+        ),
+        this.clicksService.getTopRegion(owner_id)
       ])
 
       const totalClicks = clickStats[0]?.total || 0;
       const last24HoursClicks = last24HoursClicksStats[0]?.total || 0;
       const expiredLinks = expired[0]?.total_expired || 0
+      const topRegion = getTopRegion[0] || {}
       return {
         total,
         activeLinks,
@@ -281,7 +322,8 @@ export class UrlsService {
         totalClicks,
         last24HoursClicks,
         visitor,
-        expiredLinks
+        expiredLinks,
+        topRegion
       };
     } catch (error) {
       throw error;
@@ -293,21 +335,17 @@ export class UrlsService {
     try {
       const urlId = typeof _id === "string" ? new Types.ObjectId(_id) : _id
 
-      const [WeeklyData, topCountries, devices, last7DaysAgo, last30Days, visitor, clickStats] = await Promise.all([
+      const [WeeklyData, topCountries, devices, last7DaysAgo, last30Days, visitor, totalClicks] = await Promise.all([
         this.clicksService.getAllUrlWeekData(owner_id, _id),
         this.clicksService.getToCountries(owner_id, _id),
         this.clicksService.getAllDevices(owner_id, _id),
         this.clicksService.last7DaysAgo(owner_id, _id),
         this.clicksService.last30Days(owner_id, _id),
         this.clicksService.getUniqueVisitor(owner_id, _id),
-        this.urlModel.aggregate([
-          { $match: { owner_id, _id: urlId } },
-          { $group: { _id: null, total: { $sum: "$click_count" } } }
-        ]),
+        this.clicksService.getTotalClicks(owner_id, _id)
 
       ])
 
-      const totalClicks = clickStats[0]?.total || 0;
       return { topCountries, devices, ...WeeklyData, last7DaysAgo, last30Days, visitor, totalClicks }
 
     } catch (error) {

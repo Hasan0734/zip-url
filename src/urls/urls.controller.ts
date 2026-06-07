@@ -267,11 +267,18 @@ export class AdminUrlsController {
     return await this.urlsService.findAll({ ...filters }, queryOption);
   }
 
-  @Patch('/:id')
+  @Patch('/status/:id')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   async changeStatus(@Param('id') id: Types.ObjectId, @Body() body) {
     return await this.urlsService.changeUrlStatus(id, body.status);
+  }
+  @Patch('/nsfw/:id')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  async changeUrlNsfw(@Param('id') id: Types.ObjectId, @Body() body) {
+    const is_nsfw: boolean = JSON.parse(body.is_nsfw)
+    return await this.urlsService.changeUrlNsfw(id, is_nsfw);
   }
 
   @Get("stats/summary")
