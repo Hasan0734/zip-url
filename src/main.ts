@@ -33,7 +33,22 @@ async function bootstrap() {
   app.set('trust proxy', true)
 
   app.enableCors({
-    origin: '*',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or Postman)
+      if (!origin) return callback(null, true);
+
+      // Option A: Allow ALL origins dynamically (fixes the wildcard + credentials bug)
+      callback(null, true);
+
+      /* // Option B: Highly Recommended for actual production security:
+      const allowedOrigins = ['https://yourfrontend.com', 'http://localhost:3000'];
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+      */
+    },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Accept, Authorization',
