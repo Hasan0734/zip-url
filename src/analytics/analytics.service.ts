@@ -49,12 +49,12 @@ export class AnalyticsService {
         const [last90DaysDevices, last29DaysDevices, last6DaysDevices] = await Promise.all([
             this.clicksService.getDevicesData(90),
             this.clicksService.getDevicesData(29),
-            this.clicksService.getDevicesData(6),
+            this.clicksService.getDevicesData(7),
         ])
 
         return { last90DaysDevices, last29DaysDevices, last6DaysDevices }
     }
-    
+
     async getUsersAnalytics() {
         const [last90DaysUsers, last30DaysUsers, last6DaysUsers] = await Promise.all([
             this.userService.getAnalytics(90),

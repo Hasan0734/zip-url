@@ -76,36 +76,21 @@ export class ClicksController {
 
     if (req.user.role === 'admin') {
       return this.clicksService.findAll(filters, queryOption)
-
     }
 
-
-    return this.clicksService.findAll({ filters, owner: owner_id }, queryOption)
+    return this.clicksService.findAll({ ...filters, owner: owner_id }, queryOption)
   }
 
 
   @Get("stats/summary")
   @UseGuards(AuthGuard)
-  @Roles(Role.Admin)
-  async getStatsByAdmin() {
-    const [visitor, totalClicks, topRegion, getTodayVisited, getTopDevice] = await Promise.all([
-      this.clicksService.getUniqueVisitor(),
-      this.clicksService.getTotalClicks(),
-      this.clicksService.getTopRegion(),
-      this.clicksService.getTodayVisited(),
-      this.clicksService.getTopDevice()
-    ])
+  async getClickStats(@Req() req) {
+    const ownerId = req.user.sub;
 
-    const region = topRegion[0] || {}
-    const todayVisited = getTodayVisited[0] || {}
-    const topDevice = getTopDevice[0] || {}
-    return {
-      visitor,
-      totalClicks,
-      topRegion: region,
-      ...todayVisited,
-      topDevice
-    }
+      if(req.user.role === 'admin') {
+        return this.clicksService.getClicksStats()
+      }
+      return this.clicksService.getClicksStats(ownerId)
   }
 
 }

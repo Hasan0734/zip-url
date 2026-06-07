@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
@@ -14,7 +14,7 @@ export class UsersController {
   constructor(private readonly userService: UserService) { }
 
   @Get()
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   async findAll(@Query() queries) {
     const { sort, page = '1', limit, fields, search } = queries;
@@ -54,18 +54,21 @@ export class UsersController {
   }
 
   @Get('/stats/summary')
+  @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   async getUsersStats() {
     return await this.userService.getUsersStats();
   }
 
   @Delete('/:id')
+  @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   async deleteUser(@Param('id') id: Types.ObjectId) {
     return await this.userService.deleteUserById(id);
   }
 
   @Patch('/:id')
+  @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   async changeStatus(@Param('id') id: Types.ObjectId, @Body() body) {
     return await this.userService.changeUserStatus(id, body.status);

@@ -29,6 +29,7 @@ export class ClicksService {
   }
 
   async findAll(filters: any, queries: QueryTypes) {
+    console.log(filters)
     try {
       const clicks = await this.clickModel.find(filters)
         .skip(queries.skip)
@@ -37,7 +38,7 @@ export class ClicksService {
         .sort(queries.sortBy)
         .exec()
 
-      const total = await this.clickModel.find().countDocuments();
+      const total = await this.clickModel.find(filters).countDocuments();
       const page = Math.ceil(total / queries.limit)
 
       return {
@@ -954,9 +955,17 @@ export class ClicksService {
     return visitor.length || 0
   }
 
-  async getTopRegion() {
+  async getTopRegion(owner?: Types.ObjectId,) {
+    const ownerObjectId = typeof owner === "string" ? new Types.ObjectId(owner) : owner;
+    const match: any = {}
+    if (owner) {
+      match.owner = ownerObjectId
+    }
     try {
       const result = await this.clickModel.aggregate([
+        {
+          $match: match
+        },
         {
           $group: { _id: "$city", count: { $sum: 1 } }
         },
@@ -977,12 +986,27 @@ export class ClicksService {
     }
   }
 
-  async getTotalClicks() {
-    return await this.clickModel.countDocuments().exec()
+  async getTotalClicks(owner?: Types.ObjectId,) {
+    const ownerObjectId = typeof owner === "string" ? new Types.ObjectId(owner) : owner;
+    const filters: any = {}
+    if (owner) {
+      filters.owner = ownerObjectId
+    }
+    return await this.clickModel.countDocuments(filters).exec()
   }
-  async getTodayVisited() {
+  async getTodayVisited(owner?: Types.ObjectId,) {
+    const ownerObjectId = typeof owner === "string" ? new Types.ObjectId(owner) : owner;
+    const match: any = {}
+    if (owner) {
+      match.owner = ownerObjectId
+    }
+
+
     try {
       const result = await this.clickModel.aggregate([
+        {
+          $match: match
+        },
         {
           $facet: {
             todayVisits: [
@@ -1109,9 +1133,19 @@ export class ClicksService {
     }
   }
 
-  async getTopDevice() {
+  async getTopDevice(owner?: Types.ObjectId,) {
+    const ownerObjectId = typeof owner === "string" ? new Types.ObjectId(owner) : owner;
+    const match: any = {}
+    if (owner) {
+      match.owner = ownerObjectId
+    }
+
+
     try {
       const result = await this.clickModel.aggregate([
+        {
+          $match: match
+        },
         {
           $group: { _id: "$device", count: { $sum: 1 } }
         },
@@ -1155,6 +1189,28 @@ export class ClicksService {
       return result;
     } catch (error) {
       throw error;
+    }
+  }
+
+  async getClicksStats(owner?: Types.ObjectId) {
+
+    const [visitor, totalClicks, topRegion, getTodayVisited, getTopDevice] = await Promise.all([
+      this.getUniqueVisitor(owner),
+      this.getTotalClicks(owner),
+      this.getTopRegion(owner),
+      this.getTodayVisited(owner),
+      this.getTopDevice(owner)
+    ])
+
+    const region = topRegion[0] || {}
+    const todayVisited = getTodayVisited[0] || {}
+    const topDevice = getTopDevice[0] || {}
+    return {
+      visitor,
+      totalClicks,
+      topRegion: region,
+      ...todayVisited,
+      topDevice
     }
   }
 

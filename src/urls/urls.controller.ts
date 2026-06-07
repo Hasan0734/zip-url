@@ -18,6 +18,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Types } from 'mongoose';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { Role } from 'src/auth/enum/role.enum';
+import { RolesGuard } from 'src/auth/guard/roles.guard';
 
 const MAX_LIMIT = 50;
 const DEFAULT_LIMIT = 20;
@@ -176,8 +177,12 @@ export class UrlsController {
   @Get('stats/summary')
   @UseGuards(AuthGuard)
   async getStats(@Request() req) {
+    const owner_id = req.user.sub;
 
-    return this.urlsService.getStatsSummary()
+    if (req.user.role === "admin") {
+      return this.urlsService.getStatsSummary()
+    }
+    return this.urlsService.getStatsSummary(owner_id)
   }
 
   @Get("analytics/:id")
@@ -202,7 +207,7 @@ export class AdminUrlsController {
 
   @Throttle({ default: { limit: 50, ttl: 60000 } })
   @Get()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   async findAll(@Query() queries) {
 
@@ -263,13 +268,14 @@ export class AdminUrlsController {
   }
 
   @Patch('/:id')
+  @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   async changeStatus(@Param('id') id: Types.ObjectId, @Body() body) {
     return await this.urlsService.changeUrlStatus(id, body.status);
   }
 
   @Get("stats/summary")
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   async getStatsByAdmin() {
     return this.urlsService.getStatsByAdmin()
