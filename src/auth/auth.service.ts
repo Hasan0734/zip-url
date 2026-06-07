@@ -63,7 +63,7 @@ export class AuthService {
     //   }
     // })
 
-    return { message: "Registration successfully. We sent email for the verification. Check inbox or spam.", success: true };
+    return { message: `Registration successfully. We sent email for the verification. Check inbox or spam.`, success: true };
 
   }
 
@@ -194,7 +194,7 @@ export class AuthService {
 
       return {
         message:
-          `We sent a password reset link to ${email}. Please check your inbox and follow the instructions to reset your password.`,
+          `We sent a password reset link to ${email}. Please check your inbox and follow the instructions to reset your password. Link ${process.env.APP_URL}/reset-password?token=${token}`,
         success: true,
         reset_link: `${process.env.APP_URL}/reset-password?token=${token}`
       }
@@ -294,7 +294,7 @@ export class AuthService {
     // })
 
     return {
-      message: "Verification link sent your email. Check your email inbox or spam forlder.",
+      message: `Verification link sent your email. Check your email inbox or spam forlder. ${verifyUrl}`,
       token: token,
       success: true,
       verifyUrl
